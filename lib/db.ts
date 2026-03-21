@@ -32,6 +32,13 @@ export interface Component {
   category: string;
   quantity: number;
   code_snippet: string;
+  setup_instructions?: string;
+  default_pins?: Record<string, number>;
+  connection_diagram?: string;
+  warnings?: string[];
+  required_libraries?: string[];
+  estimated_setup_time?: number;
+  complexity_level?: 'Beginner' | 'Intermediate' | 'Advanced';
 }
 
 export interface SnippetUnlock {
@@ -54,8 +61,19 @@ export interface Violation {
   id: number;
   participant_id: string;
   violation_type: string;
+  severity?: 'permitted' | 'warning' | 'critical';
   details: string | null;
+  app_name?: string;
+  is_approved?: boolean;
   created_at: string;
+}
+
+export interface PasswordChange {
+  id: number;
+  old_password: string;
+  new_password: string;
+  changed_at: string;
+  changed_by?: string;
 }
 
 // In-memory data store
@@ -68,6 +86,10 @@ interface DataStore {
   activityLogs: ActivityLog[];
   violations: Violation[];
   initialized: boolean;
+  admin_password: string;
+  password_history: PasswordChange[];
+  global_timer_duration: number;
+  whitelisted_apps: Set<string>;
 }
 
 // Global store that persists during server runtime
@@ -87,6 +109,10 @@ function getStore(): DataStore {
       activityLogs: [],
       violations: [],
       initialized: false,
+      admin_password: "admin123",
+      password_history: [],
+      global_timer_duration: 7200, // 120 minutes in seconds
+      whitelisted_apps: new Set(["Arduino IDE", "Visual Studio Code", "Notepad++", "Code::Blocks"]),
     };
   }
   return global.__iotStore;
@@ -131,7 +157,7 @@ export function createParticipant(name: string, id: string, teamName?: string): 
     name,
     team_name: teamName,
     scenario_id: null,
-    timer_duration: 3600,
+    timer_duration: store.global_timer_duration,
     timer_started_at: null,
     is_active: 0,
     is_locked: 0,
@@ -219,11 +245,40 @@ export function setScenarioComponents(scenarioId: number, componentIds: number[]
 
 // Component functions
 export function getComponent(id: number): Component | undefined {
-  return getStore().components.get(id);
+  const component = getStore().components.get(id);
+  if (!component) return undefined;
+
+  // Import and merge with documentation if available
+  try {
+    // Dynamically import component docs
+    const { getComponentDocumentation } = require('./component-docs');
+    const docs = getComponentDocumentation(id);
+    if (docs) {
+      return { ...component, ...docs };
+    }
+  } catch (e) {
+    // If component-docs not available, return basic component
+  }
+
+  return component;
 }
 
 export function getAllComponents(): Component[] {
-  return Array.from(getStore().components.values()).sort((a, b) => a.id - b.id);
+  const components = Array.from(getStore().components.values()).sort(
+    (a, b) => a.id - b.id
+  );
+
+  // Try to merge with documentation
+  try {
+    const { getComponentDocumentation } = require('./component-docs');
+    return components.map((comp) => {
+      const docs = getComponentDocumentation(comp.id);
+      return docs ? { ...comp, ...docs } : comp;
+    });
+  } catch (e) {
+    // If component-docs not available, return components as-is
+    return components;
+  }
 }
 
 export function addComponent(component: Component): void {
@@ -301,17 +356,45 @@ export function getActivityLogs(participantId?: string): ActivityLog[] {
 }
 
 // Violation functions
-export function logViolation(participantId: string, violationType: string, details?: string): void {
+export function logViolation(
+  participantId: string,
+  violationType: string,
+  details?: string,
+  options?: {
+    severity?: 'permitted' | 'warning' | 'critical';
+    app_name?: string;
+    is_approved?: boolean;
+  }
+): void {
   const store = getStore();
+  
+  // Determine severity based on violation type and context
+  let severity: 'permitted' | 'warning' | 'critical' = options?.severity || 'warning';
+  
+  // Auto-categorize if not provided
+  if (!options?.severity) {
+    if (violationType === 'local_app_access') {
+      severity = 'permitted';
+    } else if (violationType === 'tab_switch' || violationType === 'chat_interface') {
+      severity = 'critical';
+    } else if (violationType === 'window_blur') {
+      severity = 'warning';
+    }
+  }
+
   const violation: Violation = {
     id: store.violations.length + 1,
     participant_id: participantId,
     violation_type: violationType,
+    severity,
     details: details || null,
+    app_name: options?.app_name,
+    is_approved: options?.is_approved || (severity === 'permitted'),
     created_at: new Date().toISOString(),
   };
+  
   store.violations.push(violation);
-  logActivity(participantId, 'violation', `${violationType}: ${details || ''}`);
+  logActivity(participantId, 'violation', `${violationType}${options?.app_name ? ` (${options.app_name})` : ''}: ${details || ''}`);
 }
 
 export function getViolations(participantId?: string): Violation[] {
@@ -339,3 +422,61 @@ export function getStats() {
     totalSnippetUnlocks: store.snippetUnlocks.length,
   };
 }
+
+// Password management functions
+export function verifyAdminPassword(password: string): boolean {
+  return password === getStore().admin_password;
+}
+
+export function changeAdminPassword(currentPassword: string, newPassword: string): boolean {
+  const store = getStore();
+  if (currentPassword !== store.admin_password) {
+    return false;
+  }
+  
+  // Add to history (keep last 5)
+  store.password_history.push({
+    id: store.password_history.length + 1,
+    old_password: store.admin_password,
+    new_password: newPassword,
+    changed_at: new Date().toISOString(),
+  });
+  
+  if (store.password_history.length > 5) {
+    store.password_history.shift();
+  }
+  
+  store.admin_password = newPassword;
+  return true;
+}
+
+export function getPasswordHistory(): PasswordChange[] {
+  return getStore().password_history;
+}
+
+// Timer management functions
+export function setGlobalTimerDuration(duration: number): void {
+  getStore().global_timer_duration = duration;
+}
+
+export function getGlobalTimerDuration(): number {
+  return getStore().global_timer_duration;
+}
+
+// Whitelist management functions
+export function getWhitelistedApps(): string[] {
+  return Array.from(getStore().whitelisted_apps);
+}
+
+export function addWhitelistedApp(appName: string): void {
+  getStore().whitelisted_apps.add(appName);
+}
+
+export function removeWhitelistedApp(appName: string): void {
+  getStore().whitelisted_apps.delete(appName);
+}
+
+export function isAppWhitelisted(appName: string): boolean {
+  return getStore().whitelisted_apps.has(appName);
+}
+

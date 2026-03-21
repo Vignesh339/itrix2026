@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChangePasswordDialog } from "@/components/change-password-dialog";
 import {
   Users,
   Plus,
@@ -51,6 +53,7 @@ import {
   Clock,
   Eye,
   Home,
+  KeyRound,
 } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -94,10 +97,8 @@ interface Violation {
   created_at: string;
 }
 
-// Admin password - change this for your deployment
-const ADMIN_PASSWORD = "admin123";
-
 export default function AdminDashboard() {
+  const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [authError, setAuthError] = useState("");
@@ -106,16 +107,25 @@ export default function AdminDashboard() {
   const [newParticipant, setNewParticipant] = useState({ name: "", teamName: "", id: "" });
   const [createdParticipant, setCreatedParticipant] = useState<{ id: string; scenario: string } | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<string>("");
-  const [timerDuration, setTimerDuration] = useState("60");
+  const [timerDuration, setTimerDuration] = useState("120");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [globalTimerDuration, setGlobalTimerDuration] = useState("120");
   
-  // Check for existing admin session
+  // Check for existing admin session and redirect if already authenticated
   useEffect(() => {
     const adminSession = sessionStorage.getItem("admin_authenticated");
     if (adminSession === "true") {
       setIsAuthenticated(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && !initialized) {
+      // Keep user authenticated during navigation
+      sessionStorage.setItem("admin_authenticated", "true");
+    }
+  }, [isAuthenticated, initialized]);
 
   const { data: initStatus, mutate: checkInit } = useSWR("/api/init", fetcher, {
     refreshInterval: 0,
@@ -146,26 +156,58 @@ export default function AdminDashboard() {
     { refreshInterval: 5000 }
   );
 
+  const { data: timerData, mutate: refreshTimer } = useSWR(
+    initialized ? "/api/admin/timer" : null,
+    fetcher,
+    { refreshInterval: 5000 }
+  );
+
   useEffect(() => {
     if (initStatus?.initialized) {
       setInitialized(true);
     }
   }, [initStatus]);
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (timerData?.minutes) {
+      setGlobalTimerDuration(timerData.minutes.toString());
+    }
+  }, [timerData]);
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordInput === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem("admin_authenticated", "true");
-      setAuthError("");
-    } else {
-      setAuthError("Incorrect password. Please try again.");
+    try {
+      const res = await fetch("/api/admin/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: passwordInput }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.valid) {
+        setIsAuthenticated(true);
+        sessionStorage.setItem("admin_authenticated", "true");
+        setPasswordInput("");
+        setAuthError("");
+        // Redirect to home after 500ms to ensure session is saved
+        setTimeout(() => {
+          router.push("/");
+        }, 500);
+      } else {
+        setAuthError(data.error || "Incorrect password. Please try again.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setAuthError("An error occurred. Please try again.");
     }
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
     sessionStorage.removeItem("admin_authenticated");
+    setPasswordInput("");
+    setAuthError("");
   };
 
   const initializeDatabase = async () => {
@@ -264,6 +306,25 @@ export default function AdminDashboard() {
       refreshParticipants();
     } catch (error) {
       console.error("Failed to start timer:", error);
+    }
+  };
+
+  const updateGlobalTimer = async (minutes: string) => {
+    try {
+      const res = await fetch("/api/admin/timer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ duration: parseInt(minutes) * 60 }),
+      });
+
+      if (res.ok) {
+        setGlobalTimerDuration(minutes);
+        refreshTimer();
+        // Optionally notify participants of timer change
+        refreshParticipants();
+      }
+    } catch (error) {
+      console.error("Failed to update global timer:", error);
     }
   };
 
@@ -460,6 +521,14 @@ export default function AdminDashboard() {
               </Link>
               <Button 
                 variant="outline" 
+                size="icon"
+                title="Change password"
+                onClick={() => setPasswordDialogOpen(true)}
+              >
+                <KeyRound className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
                 size="sm" 
                 onClick={handleLogout}
                 className="text-muted-foreground"
@@ -467,7 +536,10 @@ export default function AdminDashboard() {
                 <Lock className="mr-2 h-3.5 w-3.5" />
                 Logout
               </Button>
-              <Select value={timerDuration} onValueChange={setTimerDuration}>
+              <Select value={timerDuration} onValueChange={(value) => {
+                setTimerDuration(value);
+                updateGlobalTimer(value);
+              }}>
                 <SelectTrigger className="w-32">
                   <Clock className="mr-2 h-4 w-4" />
                   <SelectValue />
@@ -949,6 +1021,11 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </main>
+
+      <ChangePasswordDialog
+        open={passwordDialogOpen}
+        onOpenChange={setPasswordDialogOpen}
+      />
     </div>
   );
 }
