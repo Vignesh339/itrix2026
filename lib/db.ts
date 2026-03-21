@@ -115,6 +115,21 @@ function getStore(): DataStore {
       whitelisted_apps: new Set(["Arduino IDE", "Visual Studio Code", "Notepad++", "Code::Blocks"]),
     };
   }
+  
+  // Ensure all required fields exist (safety check)
+  if (!global.__iotStore.admin_password) {
+    global.__iotStore.admin_password = "admin123";
+  }
+  if (!global.__iotStore.password_history) {
+    global.__iotStore.password_history = [];
+  }
+  if (!global.__iotStore.global_timer_duration) {
+    global.__iotStore.global_timer_duration = 7200;
+  }
+  if (!global.__iotStore.whitelisted_apps) {
+    global.__iotStore.whitelisted_apps = new Set(["Arduino IDE", "Visual Studio Code", "Notepad++", "Code::Blocks"]);
+  }
+  
   return global.__iotStore;
 }
 
@@ -426,12 +441,7 @@ export function getStats() {
 // Password management functions
 export function verifyAdminPassword(password: string): boolean {
   const store = getStore();
-  console.log('[v0] verifyAdminPassword called. Stored password exists:', !!store.admin_password);
-  console.log('[v0] Input password:', password);
-  console.log('[v0] Stored password:', store.admin_password);
-  const result = password === store.admin_password;
-  console.log('[v0] Comparison result:', result);
-  return result;
+  return password === store.admin_password;
 }
 
 export function changeAdminPassword(currentPassword: string, newPassword: string): boolean {
