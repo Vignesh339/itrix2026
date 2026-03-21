@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -57,6 +58,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 interface Participant {
   id: string;
   name: string;
+  team_name?: string;
   scenario_id: number | null;
   timer_duration: number;
   timer_started_at: string | null;
@@ -95,7 +97,8 @@ interface Violation {
 export default function AdminDashboard() {
   const [initialized, setInitialized] = useState(false);
   const [initializing, setInitializing] = useState(false);
-  const [newParticipant, setNewParticipant] = useState({ name: "", id: "" });
+  const [newParticipant, setNewParticipant] = useState({ name: "", teamName: "", id: "" });
+  const [createdParticipant, setCreatedParticipant] = useState<{ id: string; scenario: string } | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<string>("");
   const [timerDuration, setTimerDuration] = useState("60");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -151,18 +154,27 @@ export default function AdminDashboard() {
   };
 
   const createParticipant = async () => {
-    if (!newParticipant.name || !newParticipant.id) return;
+    if (!newParticipant.name) return;
 
     try {
       const res = await fetch("/api/participants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newParticipant),
+        body: JSON.stringify({
+          name: newParticipant.name,
+          teamName: newParticipant.teamName,
+          id: newParticipant.id || undefined, // Let API auto-generate if empty
+          autoAssignScenario: true,
+        }),
       });
 
       if (res.ok) {
-        setNewParticipant({ name: "", id: "" });
-        setDialogOpen(false);
+        const data = await res.json();
+        setCreatedParticipant({
+          id: data.generatedId,
+          scenario: data.participant.scenario_title || "No scenario available",
+        });
+        setNewParticipant({ name: "", teamName: "", id: "" });
         refreshParticipants();
       }
     } catch (error) {
@@ -455,7 +467,10 @@ export default function AdminDashboard() {
           <TabsContent value="participants" className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">Manage Participants</h2>
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <Dialog open={dialogOpen} onOpenChange={(open) => {
+                setDialogOpen(open);
+                if (!open) setCreatedParticipant(null);
+              }}>
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="mr-2 h-4 w-4" />
@@ -464,42 +479,113 @@ export default function AdminDashboard() {
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Add New Participant</DialogTitle>
+                    <DialogTitle>
+                      {createdParticipant ? "Participant Created!" : "Add New Participant"}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {createdParticipant 
+                        ? "Share this ID with the participant to begin the competition." 
+                        : "Create a new participant with auto-generated ID and scenario assignment."}
+                    </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Name</label>
-                      <Input
-                        placeholder="Participant name"
-                        value={newParticipant.name}
-                        onChange={(e) =>
-                          setNewParticipant((prev) => ({
-                            ...prev,
-                            name: e.target.value,
-                          }))
-                        }
-                      />
+                  
+                  {createdParticipant ? (
+                    <div className="space-y-4 py-4">
+                      <Alert className="bg-success/10 border-success">
+                        <AlertTitle className="text-success">Success!</AlertTitle>
+                        <AlertDescription>
+                          The participant has been created and assigned a scenario automatically.
+                        </AlertDescription>
+                      </Alert>
+                      <div className="space-y-3">
+                        <div className="p-4 rounded-lg bg-muted text-center">
+                          <p className="text-sm text-muted-foreground mb-1">Participant ID</p>
+                          <p className="text-3xl font-mono font-bold tracking-wider text-primary">
+                            {createdParticipant.id}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Share this ID with the participant
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-lg border">
+                          <p className="text-sm text-muted-foreground">Assigned Scenario</p>
+                          <p className="font-medium">{createdParticipant.scenario}</p>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button 
+                          className="w-full" 
+                          onClick={() => {
+                            setCreatedParticipant(null);
+                            setDialogOpen(false);
+                          }}
+                        >
+                          Done
+                        </Button>
+                      </DialogFooter>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Unique ID</label>
-                      <Input
-                        placeholder="e.g., TEAM01"
-                        value={newParticipant.id}
-                        onChange={(e) =>
-                          setNewParticipant((prev) => ({
-                            ...prev,
-                            id: e.target.value.toUpperCase(),
-                          }))
-                        }
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={createParticipant}>Create</Button>
-                  </DialogFooter>
+                  ) : (
+                    <>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Participant Name *</label>
+                          <Input
+                            placeholder="Enter participant name"
+                            value={newParticipant.name}
+                            onChange={(e) =>
+                              setNewParticipant((prev) => ({
+                                ...prev,
+                                name: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Team Name</label>
+                          <Input
+                            placeholder="Enter team name (optional)"
+                            value={newParticipant.teamName}
+                            onChange={(e) =>
+                              setNewParticipant((prev) => ({
+                                ...prev,
+                                teamName: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Custom ID (Optional)</label>
+                          <Input
+                            placeholder="Leave empty to auto-generate"
+                            value={newParticipant.id}
+                            onChange={(e) =>
+                              setNewParticipant((prev) => ({
+                                ...prev,
+                                id: e.target.value.toUpperCase(),
+                              }))
+                            }
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            A unique 6-character ID will be generated if left empty
+                          </p>
+                        </div>
+                        <Alert>
+                          <Activity className="h-4 w-4" />
+                          <AlertDescription>
+                            A random scenario will be automatically assigned when created.
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={createParticipant} disabled={!newParticipant.name}>
+                          Create Participant
+                        </Button>
+                      </DialogFooter>
+                    </>
+                  )}
                 </DialogContent>
               </Dialog>
             </div>
@@ -511,6 +597,7 @@ export default function AdminDashboard() {
                     <TableRow>
                       <TableHead>ID</TableHead>
                       <TableHead>Name</TableHead>
+                      <TableHead>Team</TableHead>
                       <TableHead>Scenario</TableHead>
                       <TableHead>Timer</TableHead>
                       <TableHead>Snippets</TableHead>
@@ -522,7 +609,7 @@ export default function AdminDashboard() {
                   <TableBody>
                     {participants.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                           No participants yet. Add one to get started.
                         </TableCell>
                       </TableRow>
@@ -531,11 +618,14 @@ export default function AdminDashboard() {
                         const timerStatus = getTimerStatus(participant);
                         return (
                           <TableRow key={participant.id}>
-                            <TableCell className="font-mono text-sm">
+                            <TableCell className="font-mono text-sm font-bold text-primary">
                               {participant.id}
                             </TableCell>
                             <TableCell className="font-medium">
                               {participant.name}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {participant.team_name || "-"}
                             </TableCell>
                             <TableCell>
                               {participant.scenario_title ? (

@@ -93,19 +93,47 @@ export default function ParticipantDashboard({
   }, [id]);
 
   useEffect(() => {
-    fetchData();
-
-    // Log login activity
-    fetch(`/api/participants/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "log_activity",
-        eventType: "login",
-        details: "Participant logged into dashboard",
-      }),
-    });
+    const initializeParticipant = async () => {
+      await fetchData();
+      
+      // Log login activity
+      await fetch(`/api/participants/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "log_activity",
+          eventType: "login",
+          details: "Participant logged into dashboard",
+        }),
+      });
+    };
+    
+    initializeParticipant();
   }, [id, fetchData]);
+  
+  // Auto-start timer when participant has a scenario but timer hasn't started
+  useEffect(() => {
+    const autoStartTimer = async () => {
+      if (participant && participant.scenario_id && !participant.timer_started_at && !participant.is_locked) {
+        try {
+          await fetch(`/api/participants/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "start_timer",
+              duration: participant.timer_duration || 3600,
+            }),
+          });
+          // Refetch to get updated timer state
+          fetchData();
+        } catch (error) {
+          console.error("Failed to auto-start timer:", error);
+        }
+      }
+    };
+    
+    autoStartTimer();
+  }, [participant, id, fetchData]);
 
   const handleTimeUp = useCallback(async () => {
     try {
