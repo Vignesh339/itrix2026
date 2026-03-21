@@ -221,7 +221,7 @@ export default function HomePage() {
                   Manage participants, assign scenarios, monitor progress, and view activity logs
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 <Button 
                   className="w-full gap-2" 
                   size="lg"
@@ -230,6 +230,9 @@ export default function HomePage() {
                   Enter Admin Panel
                   <ArrowRight className="h-4 w-4" />
                 </Button>
+                <p className="text-xs text-center text-muted-foreground">
+                  Password protected access
+                </p>
               </CardContent>
             </Card>
 

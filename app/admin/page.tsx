@@ -94,7 +94,13 @@ interface Violation {
   created_at: string;
 }
 
+// Admin password - change this for your deployment
+const ADMIN_PASSWORD = "admin123";
+
 export default function AdminDashboard() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [authError, setAuthError] = useState("");
   const [initialized, setInitialized] = useState(false);
   const [initializing, setInitializing] = useState(false);
   const [newParticipant, setNewParticipant] = useState({ name: "", teamName: "", id: "" });
@@ -102,6 +108,14 @@ export default function AdminDashboard() {
   const [selectedScenario, setSelectedScenario] = useState<string>("");
   const [timerDuration, setTimerDuration] = useState("60");
   const [dialogOpen, setDialogOpen] = useState(false);
+  
+  // Check for existing admin session
+  useEffect(() => {
+    const adminSession = sessionStorage.getItem("admin_authenticated");
+    if (adminSession === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   const { data: initStatus, mutate: checkInit } = useSWR("/api/init", fetcher, {
     refreshInterval: 0,
@@ -137,6 +151,22 @@ export default function AdminDashboard() {
       setInitialized(true);
     }
   }, [initStatus]);
+
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      sessionStorage.setItem("admin_authenticated", "true");
+      setAuthError("");
+    } else {
+      setAuthError("Incorrect password. Please try again.");
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    sessionStorage.removeItem("admin_authenticated");
+  };
 
   const initializeDatabase = async () => {
     setInitializing(true);
@@ -300,6 +330,57 @@ export default function AdminDashboard() {
     };
   };
 
+  // Admin login screen
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
+              <Lock className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">Admin Access</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Password</label>
+                <Input
+                  type="password"
+                  placeholder="Enter admin password"
+                  value={passwordInput}
+                  onChange={(e) => {
+                    setPasswordInput(e.target.value);
+                    setAuthError("");
+                  }}
+                  autoFocus
+                />
+                {authError && (
+                  <Alert variant="destructive" className="py-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>{authError}</AlertDescription>
+                  </Alert>
+                )}
+              </div>
+              <Button type="submit" className="w-full" size="lg">
+                <Lock className="mr-2 h-4 w-4" />
+                Login to Admin
+              </Button>
+              <div className="text-center">
+                <Link href="/">
+                  <Button variant="ghost" size="sm">
+                    <Home className="mr-2 h-4 w-4" />
+                    Back to Home
+                  </Button>
+                </Link>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -377,6 +458,15 @@ export default function AdminDashboard() {
                   <Home className="h-4 w-4" />
                 </Button>
               </Link>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleLogout}
+                className="text-muted-foreground"
+              >
+                <Lock className="mr-2 h-3.5 w-3.5" />
+                Logout
+              </Button>
               <Select value={timerDuration} onValueChange={setTimerDuration}>
                 <SelectTrigger className="w-32">
                   <Clock className="mr-2 h-4 w-4" />
