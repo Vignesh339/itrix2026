@@ -190,10 +190,7 @@ export default function AdminDashboard() {
         sessionStorage.setItem("admin_authenticated", "true");
         setPasswordInput("");
         setAuthError("");
-        // Redirect to home after 500ms to ensure session is saved
-        setTimeout(() => {
-          router.push("/");
-        }, 500);
+        // Stay on admin panel after successful login
       } else {
         setAuthError(data.error || "Incorrect password. Please try again.");
       }

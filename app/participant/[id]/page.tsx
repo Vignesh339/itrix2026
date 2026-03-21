@@ -14,7 +14,6 @@ import {
   User,
   Cpu,
   Unlock,
-  AlertTriangle,
   Lock,
   Activity,
 } from "lucide-react";
@@ -66,7 +65,6 @@ export default function ParticipantDashboard({
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [violationCount, setViolationCount] = useState(0);
 
   const fetchData = useCallback(async () => {
     try {
@@ -83,7 +81,6 @@ export default function ParticipantDashboard({
       setParticipant(data.participant);
       setComponents(data.components);
       setUnlockedSnippets(data.unlockedSnippets);
-      setViolationCount(data.participant.violation_count);
     } catch (err) {
       setError("Failed to load dashboard");
       console.error(err);
@@ -241,12 +238,6 @@ export default function ParticipantDashboard({
                   <Unlock className="h-3 w-3" />
                   {unlockedSnippets.length} Unlocked
                 </Badge>
-                {violationCount > 0 && (
-                  <Badge variant="destructive" className="gap-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    {violationCount} Violations
-                  </Badge>
-                )}
               </div>
             </div>
           </div>
