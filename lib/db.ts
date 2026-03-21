@@ -425,7 +425,13 @@ export function getStats() {
 
 // Password management functions
 export function verifyAdminPassword(password: string): boolean {
-  return password === getStore().admin_password;
+  const store = getStore();
+  console.log('[v0] verifyAdminPassword called. Stored password exists:', !!store.admin_password);
+  console.log('[v0] Input password:', password);
+  console.log('[v0] Stored password:', store.admin_password);
+  const result = password === store.admin_password;
+  console.log('[v0] Comparison result:', result);
+  return result;
 }
 
 export function changeAdminPassword(currentPassword: string, newPassword: string): boolean {

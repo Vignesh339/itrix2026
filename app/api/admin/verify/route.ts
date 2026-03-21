@@ -7,13 +7,16 @@ export async function POST(request: NextRequest) {
     const { password } = body;
 
     if (!password) {
+      console.log('[v0] No password provided');
       return NextResponse.json(
         { error: 'Password is required' },
         { status: 400 }
       );
     }
 
+    console.log('[v0] Verifying password. Input length:', password.length);
     const isValid = verifyAdminPassword(password);
+    console.log('[v0] Password verification result:', isValid);
 
     if (!isValid) {
       return NextResponse.json(
@@ -24,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ valid: true });
   } catch (error) {
-    console.error('Error verifying password:', error);
+    console.error('[v0] Error verifying password:', error);
     return NextResponse.json(
       { error: 'Failed to verify password' },
       { status: 500 }
