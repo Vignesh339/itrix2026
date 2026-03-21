@@ -23,55 +23,82 @@ import {
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 interface Participant {
-  id: number
+  id: string
   name: string
-  team_name: string
-  status: string
-  timer_started: number | null
-  timer_remaining: number
-  violations: number
+  scenario_id: number | null
+  timer_duration: number
+  timer_started_at: string | null
+  is_active: number
+  is_locked: number
+  created_at: string
+  scenario_title: string | null
+  snippets_unlocked: number
+  violation_count: number
 }
 
 interface Component {
   id: number
   name: string
+  description: string
+  pinout: string
   category: string
   quantity: number
-  available: number
+  code_snippet: string
 }
 
 interface Scenario {
   id: number
   title: string
-  difficulty: string
+  situation: string
+  what_to_build: string
+  team_number: number | null
+}
+
+interface ParticipantsResponse {
+  participants: Participant[]
+}
+
+interface ComponentsResponse {
+  components: Component[]
+}
+
+interface ScenariosResponse {
+  scenarios: Scenario[]
 }
 
 export default function HomePage() {
   const [isInitializing, setIsInitializing] = useState(false)
   const [initialized, setInitialized] = useState(false)
 
-  const { data: participants, error: participantsError, mutate: mutateParticipants } = useSWR<Participant[]>(
+  const { data: participantsData, error: participantsError, mutate: mutateParticipants } = useSWR<ParticipantsResponse>(
     initialized ? "/api/participants" : null,
     fetcher,
     { refreshInterval: 5000 }
   )
 
-  const { data: components, error: componentsError } = useSWR<Component[]>(
+  const { data: componentsData, error: componentsError } = useSWR<ComponentsResponse>(
     initialized ? "/api/components" : null,
     fetcher
   )
 
-  const { data: scenarios, error: scenariosError } = useSWR<Scenario[]>(
+  const { data: scenariosData, error: scenariosError } = useSWR<ScenariosResponse>(
     initialized ? "/api/scenarios" : null,
     fetcher
   )
 
+  const participants = participantsData?.participants || []
+  const components = componentsData?.components || []
+  const scenarios = scenariosData?.scenarios || []
+
   useEffect(() => {
     const checkDb = async () => {
       try {
-        const res = await fetch("/api/participants")
+        const res = await fetch("/api/init")
         if (res.ok) {
-          setInitialized(true)
+          const data = await res.json()
+          if (data.initialized) {
+            setInitialized(true)
+          }
         }
       } catch {
         // Database not initialized yet
@@ -95,9 +122,9 @@ export default function HomePage() {
     }
   }
 
-  const activeParticipants = participants?.filter(p => p.status === "active").length || 0
-  const totalComponents = components?.reduce((sum, c) => sum + c.quantity, 0) || 0
-  const availableComponents = components?.reduce((sum, c) => sum + c.available, 0) || 0
+  const activeParticipants = participants.filter(p => p.is_active === 1 && !p.is_locked).length
+  const totalComponents = components.reduce((sum, c) => sum + c.quantity, 0)
+  const totalCategories = [...new Set(components.map(c => c.category))].length
 
   if (!initialized) {
     return (
@@ -203,7 +230,7 @@ export default function HomePage() {
             <CardContent>
               <div className="text-2xl font-bold text-foreground">{activeParticipants}</div>
               <p className="text-xs text-muted-foreground">
-                of {participants?.length || 0} total
+                of {participants.length} total
               </p>
             </CardContent>
           </Card>
@@ -218,7 +245,7 @@ export default function HomePage() {
             <CardContent>
               <div className="text-2xl font-bold text-foreground">{totalComponents}</div>
               <p className="text-xs text-muted-foreground">
-                {availableComponents} available
+                {components.length} unique types
               </p>
             </CardContent>
           </Card>
@@ -231,7 +258,7 @@ export default function HomePage() {
               <FileText className="w-4 h-4 text-chart-3" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{scenarios?.length || 0}</div>
+              <div className="text-2xl font-bold text-foreground">{scenarios.length}</div>
               <p className="text-xs text-muted-foreground">
                 competition challenges
               </p>
@@ -241,14 +268,14 @@ export default function HomePage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Component Types
+                Categories
               </CardTitle>
               <Cpu className="w-4 h-4 text-chart-5" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{components?.length || 0}</div>
+              <div className="text-2xl font-bold text-foreground">{totalCategories}</div>
               <p className="text-xs text-muted-foreground">
-                unique items
+                component categories
               </p>
             </CardContent>
           </Card>
@@ -274,7 +301,7 @@ export default function HomePage() {
               </div>
             </CardHeader>
             <CardContent>
-              {!participants ? (
+              {!participantsData ? (
                 <div className="flex items-center justify-center py-8">
                   <Spinner className="w-6 h-6" />
                 </div>
@@ -301,25 +328,25 @@ export default function HomePage() {
                           </div>
                           <div>
                             <p className="font-medium text-foreground">{participant.name}</p>
-                            <p className="text-sm text-muted-foreground">{participant.team_name}</p>
+                            <p className="text-sm text-muted-foreground">ID: {participant.id}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          {participant.violations > 0 && (
+                          {participant.violation_count > 0 && (
                             <Badge variant="destructive" className="gap-1">
                               <AlertTriangle className="w-3 h-3" />
-                              {participant.violations}
+                              {participant.violation_count}
                             </Badge>
                           )}
-                          {participant.timer_started ? (
+                          {participant.is_locked ? (
+                            <Badge className="gap-1 bg-destructive text-destructive-foreground">
+                              <CheckCircle className="w-3 h-3" />
+                              Locked
+                            </Badge>
+                          ) : participant.timer_started_at ? (
                             <Badge variant="secondary" className="gap-1">
                               <Clock className="w-3 h-3" />
                               Active
-                            </Badge>
-                          ) : participant.status === "completed" ? (
-                            <Badge className="gap-1 bg-success text-success-foreground">
-                              <CheckCircle className="w-3 h-3" />
-                              Done
                             </Badge>
                           ) : (
                             <Badge variant="outline">Waiting</Badge>
@@ -347,7 +374,7 @@ export default function HomePage() {
               <CardDescription>Competition challenges</CardDescription>
             </CardHeader>
             <CardContent>
-              {!scenarios ? (
+              {!scenariosData ? (
                 <div className="flex items-center justify-center py-8">
                   <Spinner className="w-6 h-6" />
                 </div>
@@ -358,21 +385,14 @@ export default function HomePage() {
                       key={scenario.id}
                       className="p-3 rounded-lg border bg-card"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium text-sm text-foreground leading-tight">
-                          {scenario.title}
+                      <p className="font-medium text-sm text-foreground leading-tight">
+                        {scenario.title}
+                      </p>
+                      {scenario.team_number && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Team {scenario.team_number}
                         </p>
-                        <Badge 
-                          variant={
-                            scenario.difficulty === "Easy" ? "secondary" :
-                            scenario.difficulty === "Medium" ? "outline" :
-                            "destructive"
-                          }
-                          className="text-xs shrink-0"
-                        >
-                          {scenario.difficulty}
-                        </Badge>
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -390,7 +410,7 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {!components ? (
+            {!componentsData ? (
               <div className="flex items-center justify-center py-8">
                 <Spinner className="w-6 h-6" />
               </div>
@@ -399,14 +419,13 @@ export default function HomePage() {
                 {Array.from(new Set(components.map(c => c.category))).map((category) => {
                   const categoryComponents = components.filter(c => c.category === category)
                   const totalQty = categoryComponents.reduce((sum, c) => sum + c.quantity, 0)
-                  const availableQty = categoryComponents.reduce((sum, c) => sum + c.available, 0)
                   
                   return (
                     <div key={category} className="p-4 rounded-lg border bg-card text-center">
                       <p className="font-medium text-foreground text-sm mb-1">{category}</p>
                       <p className="text-2xl font-bold text-primary">{categoryComponents.length}</p>
                       <p className="text-xs text-muted-foreground">
-                        {availableQty}/{totalQty} available
+                        {totalQty} units total
                       </p>
                     </div>
                   )
