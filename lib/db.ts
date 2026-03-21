@@ -4,6 +4,7 @@
 export interface Participant {
   id: string;
   name: string;
+  team_name?: string;
   scenario_id: number | null;
   timer_duration: number;
   timer_started_at: string | null;
@@ -115,6 +116,7 @@ export function getAllParticipants(): Participant[] {
     const violationCount = store.violations.filter(v => v.participant_id === p.id).length;
     return {
       ...p,
+      team_name: p.team_name,
       scenario_title: scenario?.title,
       snippets_unlocked: snippetsUnlocked,
       violation_count: violationCount,
@@ -122,11 +124,12 @@ export function getAllParticipants(): Participant[] {
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
-export function createParticipant(name: string, id: string): Participant {
+export function createParticipant(name: string, id: string, teamName?: string): Participant {
   const store = getStore();
   const participant: Participant = {
     id,
     name,
+    team_name: teamName,
     scenario_id: null,
     timer_duration: 3600,
     timer_started_at: null,

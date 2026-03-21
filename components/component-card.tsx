@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -124,6 +125,9 @@ export function ComponentCard({
                   <Cpu className="h-4 w-4" />
                   {component.name} - Code Snippet
                 </DialogTitle>
+                <DialogDescription>
+                  Copy this code to use in your Arduino IDE project.
+                </DialogDescription>
               </DialogHeader>
               <div className="relative">
                 <Button

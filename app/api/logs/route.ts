@@ -5,6 +5,7 @@ import {
   logViolation, 
   logActivity,
   getParticipant,
+  getAllParticipants,
   initializeDatabase, 
   isInitialized 
 } from '@/lib/db';
@@ -25,14 +26,26 @@ export async function GET(request: NextRequest) {
     const participantId = searchParams.get('participantId') || undefined;
     const type = searchParams.get('type');
     
+    // Get all participants for name lookup
+    const participants = getAllParticipants();
+    const participantMap = new Map(participants.map(p => [p.id, p.name]));
+    
     if (type === 'violations') {
       const violations = getViolations(participantId);
-      return NextResponse.json({ violations });
+      const violationsWithNames = violations.map(v => ({
+        ...v,
+        participant_name: participantMap.get(v.participant_id) || v.participant_id
+      }));
+      return NextResponse.json({ violations: violationsWithNames });
     }
     
     // Default: activity logs
     const logs = getActivityLogs(participantId);
-    return NextResponse.json({ logs });
+    const logsWithNames = logs.map(l => ({
+      ...l,
+      participant_name: participantMap.get(l.participant_id) || l.participant_id
+    }));
+    return NextResponse.json({ logs: logsWithNames });
   } catch (error) {
     console.error('Error fetching logs:', error);
     return NextResponse.json({ error: 'Failed to fetch logs' }, { status: 500 });
