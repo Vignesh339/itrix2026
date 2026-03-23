@@ -32,7 +32,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Spinner } from "@/components/ui/spinner";
-import { Plus, Trash2, Edit, BarChart3 } from "lucide-react";
+import { Plus, Trash2, Edit, BarChart3, Sparkles, Filter } from "lucide-react";
+import { AIQuestionGenerator } from "./ai-question-generator";
+import { QuestionFilterAssign } from "./question-filter-assign";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -48,6 +50,7 @@ interface QuestionData {
 
 export function Round1QuestionManager() {
   const [isOpen, setIsOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     type: "mcq",
@@ -59,6 +62,12 @@ export function Round1QuestionManager() {
 
   const { data: questionsData, mutate: refreshQuestions } = useSWR(
     "/api/round1/questions",
+    fetcher,
+    { refreshInterval: 5000 }
+  );
+
+  const { data: participantsData } = useSWR(
+    "/api/participants",
     fetcher,
     { refreshInterval: 5000 }
   );
@@ -180,13 +189,46 @@ export function Round1QuestionManager() {
             <CardTitle>Round 1 Questions</CardTitle>
             <CardDescription>Manage MCQ, matching, and simulation questions</CardDescription>
           </div>
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Question
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <AIQuestionGenerator
+              onQuestionsGenerated={async (questions) => {
+                // Import generated questions
+                for (const q of questions) {
+                  await fetch("/api/round1/questions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      title: q.title,
+                      type: q.type,
+                      section: q.section,
+                      difficulty: q.difficulty,
+                      score: q.score,
+                      timeLimit: 45,
+                      scenario: q.scenario,
+                      options: q.options,
+                      correctAnswer: q.correctAnswer,
+                      explanation: q.explanation,
+                    }),
+                  });
+                }
+                refreshQuestions();
+              }}
+            />
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => setFilterOpen(true)}
+            >
+              <Filter className="h-4 w-4" />
+              Assign to Participants
+            </Button>
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Question
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Add Round 1 Question</DialogTitle>
@@ -349,6 +391,18 @@ export function Round1QuestionManager() {
           )}
         </CardContent>
       </Card>
+
+      <QuestionFilterAssign
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        questions={questions}
+        participants={participantsData?.participants || []}
+        onAssign={async (questionIds, participantIds) => {
+          // In production, this would save the assignment to database
+          // For now, we just notify the user
+          console.log("Assigned questions", questionIds, "to participants", participantIds);
+        }}
+      />
     </div>
   );
 }

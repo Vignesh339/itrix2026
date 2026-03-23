@@ -106,7 +106,7 @@ export default function AdminDashboard() {
   const [authError, setAuthError] = useState("");
   const [initialized, setInitialized] = useState(false);
   const [initializing, setInitializing] = useState(false);
-  const [newParticipant, setNewParticipant] = useState({ name: "", teamName: "", id: "" });
+  const [newParticipant, setNewParticipant] = useState({ name: "", teamName: "", id: "", assignedRound: "round2" as 'round1' | 'round2' });
   const [createdParticipant, setCreatedParticipant] = useState<{ id: string; scenario: string } | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<string>("");
   const [timerDuration, setTimerDuration] = useState("120");
@@ -234,8 +234,9 @@ export default function AdminDashboard() {
         body: JSON.stringify({
           name: newParticipant.name,
           teamName: newParticipant.teamName,
-          id: newParticipant.id || undefined, // Let API auto-generate if empty
-          autoAssignScenario: true,
+          id: newParticipant.id || undefined,
+          assignedRound: newParticipant.assignedRound,
+          autoAssignScenario: newParticipant.assignedRound === 'round2',
         }),
       });
 
@@ -243,9 +244,9 @@ export default function AdminDashboard() {
         const data = await res.json();
         setCreatedParticipant({
           id: data.generatedId,
-          scenario: data.participant.scenario_title || "No scenario available",
+          scenario: newParticipant.assignedRound === 'round1' ? 'Round 1 - MCQ Quiz' : (data.participant.scenario_title || "No scenario available"),
         });
-        setNewParticipant({ name: "", teamName: "", id: "" });
+        setNewParticipant({ name: "", teamName: "", id: "", assignedRound: "round2" });
         refreshParticipants();
       }
     } catch (error) {
@@ -731,6 +732,23 @@ export default function AdminDashboard() {
                           <p className="text-xs text-muted-foreground">
                             A unique 6-character ID will be generated if left empty
                           </p>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Assign to Round</label>
+                          <Select value={newParticipant.assignedRound} onValueChange={(value: any) =>
+                            setNewParticipant((prev) => ({
+                              ...prev,
+                              assignedRound: value,
+                            }))
+                          }>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="round1">Round 1 - MCQ Quiz</SelectItem>
+                              <SelectItem value="round2">Round 2 - Hands-on Scenario</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                         <Alert>
                           <Activity className="h-4 w-4" />

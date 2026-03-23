@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
   try {
     ensureInitialized();
     const body = await request.json();
-    const { name, teamName, id: providedId, autoAssignScenario = true } = body;
+    const { name, teamName, id: providedId, autoAssignScenario = true, assignedRound } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -64,12 +64,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Participant ID already exists' }, { status: 400 });
     }
 
-    // Create participant
-    const participant = createParticipant(name, participantId, teamName);
+    // Create participant with assigned round
+    const participant = createParticipant(name, participantId, teamName, assignedRound);
 
-    // Auto-assign a random scenario if enabled
+    // Auto-assign a random scenario if enabled and participant is for Round 2
     let assignedScenario = null;
-    if (autoAssignScenario) {
+    if (autoAssignScenario && assignedRound !== 'round1') {
       const scenarios = getAllScenarios();
       const participants = getAllParticipants();
       
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    logActivity(participantId, 'participant_created', `New participant created: ${name}`);
+    logActivity(participantId, 'participant_created', `New participant created: ${name} (${assignedRound || 'unassigned'})`);
 
     return NextResponse.json({ 
       success: true, 
