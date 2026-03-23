@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    logActivity(participantId, 'participant_created', `New participant created: ${displayName}`);
+    logActivity(participantId, 'participant_created', `New participant created: ${name}`);
 
     return NextResponse.json({ 
       success: true, 
