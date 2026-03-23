@@ -5,6 +5,7 @@ export interface Participant {
   id: string;
   name: string;
   team_name?: string;
+  assigned_round: 'round1' | 'round2' | null;
   scenario_id: number | null;
   timer_duration: number;
   timer_started_at: string | null;
@@ -14,6 +15,12 @@ export interface Participant {
   snippets_unlocked?: number;
   violation_count?: number;
   scenario_title?: string;
+  round1_score?: number;
+  round1_completed?: boolean;
+  round1_completed_at?: string;
+  round2_score?: number;
+  round2_completed?: boolean;
+  round2_completed_at?: string;
 }
 
 export interface Scenario {
@@ -76,6 +83,67 @@ export interface PasswordChange {
   changed_by?: string;
 }
 
+// Round 1 Question Types
+export type QuestionType = 'mcq' | 'multi-select' | 'matching' | 'component-matching' | 'logic' | 'simulation';
+
+export interface QuestionOption {
+  id: string;
+  text: string;
+  isCorrect?: boolean;
+}
+
+export interface MatchingPair {
+  id: string;
+  left: string;
+  right: string;
+}
+
+export interface Round1Question {
+  id: number;
+  type: QuestionType;
+  title: string;
+  scenario: string;
+  section: 'A' | 'B' | 'C' | 'D';
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  score: number;
+  timeLimit: number;
+  options?: QuestionOption[];
+  correctAnswer?: string | string[];
+  matchingPairs?: MatchingPair[];
+  explanation?: string;
+  created_at: string;
+}
+
+export interface Round1Response {
+  id: number;
+  participant_id: string;
+  question_id: number;
+  answer: string | string[];
+  is_correct: boolean;
+  score_obtained: number;
+  time_taken: number;
+  answered_at: string;
+}
+
+export interface Round1Result {
+  id: number;
+  participant_id: string;
+  total_score: number;
+  section_scores: {
+    A: number;
+    B: number;
+    C: number;
+    D: number;
+  };
+  total_questions: number;
+  correct_answers: number;
+  completion_status: 'pending' | 'in-progress' | 'completed';
+  started_at: string;
+  completed_at?: string;
+  tab_switches: number;
+  violations: number;
+}
+
 // In-memory data store
 interface DataStore {
   participants: Map<string, Participant>;
@@ -90,6 +158,9 @@ interface DataStore {
   password_history: PasswordChange[];
   global_timer_duration: number;
   whitelisted_apps: Set<string>;
+  round1Questions: Map<number, Round1Question>;
+  round1Responses: Round1Response[];
+  round1Results: Map<string, Round1Result>;
 }
 
 // Global store that persists during server runtime
@@ -113,6 +184,9 @@ function getStore(): DataStore {
       password_history: [],
       global_timer_duration: 7200, // 120 minutes in seconds
       whitelisted_apps: new Set(["Arduino IDE", "Visual Studio Code", "Notepad++", "Code::Blocks"]),
+      round1Questions: new Map(),
+      round1Responses: [],
+      round1Results: new Map(),
     };
   }
   
@@ -128,6 +202,15 @@ function getStore(): DataStore {
   }
   if (!global.__iotStore.whitelisted_apps) {
     global.__iotStore.whitelisted_apps = new Set(["Arduino IDE", "Visual Studio Code", "Notepad++", "Code::Blocks"]);
+  }
+  if (!global.__iotStore.round1Questions) {
+    global.__iotStore.round1Questions = new Map();
+  }
+  if (!global.__iotStore.round1Responses) {
+    global.__iotStore.round1Responses = [];
+  }
+  if (!global.__iotStore.round1Results) {
+    global.__iotStore.round1Results = new Map();
   }
   
   return global.__iotStore;
@@ -165,18 +248,23 @@ export function getAllParticipants(): Participant[] {
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
-export function createParticipant(name: string, id: string, teamName?: string): Participant {
+export function createParticipant(name: string, id: string, teamName?: string, assignedRound?: 'round1' | 'round2'): Participant {
   const store = getStore();
   const participant: Participant = {
     id,
     name,
     team_name: teamName,
+    assigned_round: assignedRound || null,
     scenario_id: null,
     timer_duration: store.global_timer_duration,
     timer_started_at: null,
     is_active: 0,
     is_locked: 0,
     created_at: new Date().toISOString(),
+    round1_score: 0,
+    round1_completed: false,
+    round2_score: 0,
+    round2_completed: false,
   };
   store.participants.set(id, participant);
   return participant;
@@ -496,3 +584,160 @@ export function isAppWhitelisted(appName: string): boolean {
   return getStore().whitelisted_apps.has(appName);
 }
 
+// Round 1 Question Management
+export function createRound1Question(question: Omit<Round1Question, 'id' | 'created_at'>): Round1Question {
+  const store = getStore();
+  const id = Math.max(...Array.from(store.round1Questions.keys()), 0) + 1;
+  const newQuestion: Round1Question = {
+    ...question,
+    id,
+    created_at: new Date().toISOString(),
+  };
+  store.round1Questions.set(id, newQuestion);
+  return newQuestion;
+}
+
+export function getRound1Questions(section?: string): Round1Question[] {
+  const store = getStore();
+  const questions = Array.from(store.round1Questions.values());
+  if (section) {
+    return questions.filter(q => q.section === section);
+  }
+  return questions;
+}
+
+export function getRound1Question(id: number): Round1Question | undefined {
+  return getStore().round1Questions.get(id);
+}
+
+export function updateRound1Question(id: number, updates: Partial<Round1Question>): boolean {
+  const store = getStore();
+  const question = store.round1Questions.get(id);
+  if (!question) return false;
+  
+  Object.assign(question, updates);
+  store.round1Questions.set(id, question);
+  return true;
+}
+
+export function deleteRound1Question(id: number): boolean {
+  return getStore().round1Questions.delete(id);
+}
+
+// Round 1 Response Recording
+export function recordRound1Response(
+  participantId: string,
+  questionId: number,
+  answer: string | string[],
+  timeTaken: number
+): Round1Response {
+  const store = getStore();
+  const question = store.round1Questions.get(questionId);
+  if (!question) throw new Error('Question not found');
+  
+  let isCorrect = false;
+  let scoreObtained = 0;
+  
+  if (question.type === 'mcq' || question.type === 'logic') {
+    isCorrect = answer === question.correctAnswer;
+  } else if (question.type === 'multi-select') {
+    const correctAnswers = Array.isArray(question.correctAnswer) ? question.correctAnswer : [question.correctAnswer];
+    isCorrect = JSON.stringify(Array.isArray(answer) ? answer.sort() : [answer]) ===
+               JSON.stringify(correctAnswers.sort());
+  } else if (question.type === 'matching' || question.type === 'component-matching') {
+    isCorrect = JSON.stringify(answer) === JSON.stringify(question.correctAnswer);
+  } else if (question.type === 'simulation') {
+    isCorrect = answer === question.correctAnswer;
+  }
+  
+  if (isCorrect) {
+    scoreObtained = question.score;
+  }
+  
+  const response: Round1Response = {
+    id: store.round1Responses.length + 1,
+    participant_id: participantId,
+    question_id: questionId,
+    answer,
+    is_correct: isCorrect,
+    score_obtained: scoreObtained,
+    time_taken: timeTaken,
+    answered_at: new Date().toISOString(),
+  };
+  
+  store.round1Responses.push(response);
+  logActivity(participantId, 'round1_response', `Question ${questionId}: ${isCorrect ? 'Correct' : 'Incorrect'} (${scoreObtained}/${question.score} points)`);
+  
+  return response;
+}
+
+export function getRound1Responses(participantId: string): Round1Response[] {
+  return getStore().round1Responses.filter(r => r.participant_id === participantId);
+}
+
+// Round 1 Result Management
+export function createRound1Result(participantId: string): Round1Result {
+  const store = getStore();
+  
+  const responses = store.round1Responses.filter(r => r.participant_id === participantId);
+  const totalScore = responses.reduce((sum, r) => sum + r.score_obtained, 0);
+  
+  const sectionScores = {
+    A: 0,
+    B: 0,
+    C: 0,
+    D: 0,
+  };
+  
+  responses.forEach(response => {
+    const question = store.round1Questions.get(response.question_id);
+    if (question) {
+      sectionScores[question.section] += response.score_obtained;
+    }
+  });
+  
+  const result: Round1Result = {
+    id: Math.max(...Array.from(store.round1Results.keys()).map(k => parseInt(k)), 0) + 1,
+    participant_id: participantId,
+    total_score: totalScore,
+    section_scores: sectionScores,
+    total_questions: store.round1Questions.size,
+    correct_answers: responses.filter(r => r.is_correct).length,
+    completion_status: 'completed',
+    started_at: new Date().toISOString(),
+    completed_at: new Date().toISOString(),
+    tab_switches: 0,
+    violations: 0,
+  };
+  
+  store.round1Results.set(participantId, result);
+  
+  // Update participant scores
+  const participant = store.participants.get(participantId);
+  if (participant) {
+    participant.round1_score = totalScore;
+    participant.round1_completed = true;
+    participant.round1_completed_at = new Date().toISOString();
+    store.participants.set(participantId, participant);
+  }
+  
+  logActivity(participantId, 'round1_completed', `Round 1 completed with score: ${totalScore}`);
+  
+  return result;
+}
+
+export function getRound1Result(participantId: string): Round1Result | undefined {
+  return getStore().round1Results.get(participantId);
+}
+
+export function updateParticipantAssignedRound(participantId: string, round: 'round1' | 'round2'): boolean {
+  const store = getStore();
+  const participant = store.participants.get(participantId);
+  if (!participant) return false;
+  
+  participant.assigned_round = round;
+  store.participants.set(participantId, participant);
+  logActivity(participantId, 'round_assigned', `Assigned to ${round}`);
+  
+  return true;
+}

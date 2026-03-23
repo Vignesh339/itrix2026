@@ -106,20 +106,28 @@ export default function HomePage() {
         return
       }
 
-      // Auto-start timer if not already started and scenario is assigned
-      if (data.participant.scenario_id && !data.participant.timer_started_at) {
-        await fetch(`/api/participants/${participantId.trim().toUpperCase()}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "start_timer",
-            duration: data.participant.timer_duration || 3600,
-          }),
-        })
+      // Route based on assigned round
+      const assignedRound = data.participant.assigned_round
+      
+      if (assignedRound === 'round1') {
+        router.push(`/round1/${participantId.trim().toUpperCase()}`)
+      } else if (assignedRound === 'round2') {
+        // Auto-start timer if not already started and scenario is assigned
+        if (data.participant.scenario_id && !data.participant.timer_started_at) {
+          await fetch(`/api/participants/${participantId.trim().toUpperCase()}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "start_timer",
+              duration: data.participant.timer_duration || 3600,
+            }),
+          })
+        }
+        router.push(`/participant/${participantId.trim().toUpperCase()}`)
+      } else {
+        setError("Round assignment pending. Please contact the admin.")
+        setIsLoading(false)
       }
-
-      // Navigate to participant dashboard
-      router.push(`/participant/${participantId.trim().toUpperCase()}`)
     } catch (err) {
       setError("Connection error. The system works offline - ensure the local server is running.")
       setIsLoading(false)

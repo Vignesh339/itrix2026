@@ -36,6 +36,8 @@ import {
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChangePasswordDialog } from "@/components/change-password-dialog";
+import { Round1Management } from "@/components/round1-management";
+import { Round1QuestionManager } from "@/components/round1-question-manager";
 import {
   Users,
   Plus,
@@ -616,12 +618,14 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="container mx-auto px-4 pb-8">
         <Tabs defaultValue="participants" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="participants">Participants</TabsTrigger>
-            <TabsTrigger value="activity">Activity Log</TabsTrigger>
-            <TabsTrigger value="violations">Violations</TabsTrigger>
-            <TabsTrigger value="components">Components</TabsTrigger>
-          </TabsList>
+        <TabsList>
+          <TabsTrigger value="participants">Participants</TabsTrigger>
+          <TabsTrigger value="round1-manage">Round 1 - Manage</TabsTrigger>
+          <TabsTrigger value="round1-questions">Round 1 - Questions</TabsTrigger>
+          <TabsTrigger value="activity">Activity Log</TabsTrigger>
+          <TabsTrigger value="violations">Violations</TabsTrigger>
+          <TabsTrigger value="components">Components</TabsTrigger>
+        </TabsList>
 
           <TabsContent value="participants" className="space-y-4">
             <div className="flex justify-between items-center">
@@ -1015,6 +1019,14 @@ export default function AdminDashboard() {
 
           <TabsContent value="components" className="space-y-4">
             <ComponentsView />
+          </TabsContent>
+
+          <TabsContent value="round1-manage" className="space-y-4">
+            <Round1Management />
+          </TabsContent>
+
+          <TabsContent value="round1-questions" className="space-y-4">
+            <Round1QuestionManager />
           </TabsContent>
         </Tabs>
       </main>
