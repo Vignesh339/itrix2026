@@ -229,98 +229,98 @@ export function Round1QuestionManager() {
                   Add Question
                 </Button>
               </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Add Round 1 Question</DialogTitle>
-                <DialogDescription>
-                  Create a new question for Round 1 of the competition
-                </DialogDescription>
-              </DialogHeader>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Add Round 1 Question</DialogTitle>
+                  <DialogDescription>
+                    Create a new question for Round 1 of the competition
+                  </DialogDescription>
+                </DialogHeader>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Title</label>
-                  <Input
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Question title"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium">Type</label>
-                    <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="mcq">MCQ</SelectItem>
-                        <SelectItem value="multi-select">Multi-Select</SelectItem>
-                        <SelectItem value="matching">Matching</SelectItem>
-                        <SelectItem value="logic">Logic</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium">Section</label>
-                    <Select value={formData.section} onValueChange={(value) => setFormData({ ...formData, section: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="A">Section A</SelectItem>
-                        <SelectItem value="B">Section B</SelectItem>
-                        <SelectItem value="C">Section C</SelectItem>
-                        <SelectItem value="D">Section D</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Difficulty</label>
-                    <Select value={formData.difficulty} onValueChange={(value) => setFormData({ ...formData, difficulty: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Easy">Easy</SelectItem>
-                        <SelectItem value="Medium">Medium</SelectItem>
-                        <SelectItem value="Hard">Hard</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium">Score</label>
+                    <label className="text-sm font-medium">Title</label>
                     <Input
-                      type="number"
-                      value={formData.score}
-                      onChange={(e) => setFormData({ ...formData, score: e.target.value })}
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="Question title"
                     />
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium">Time (s)</label>
-                    <Input
-                      type="number"
-                      value={formData.timeLimit}
-                      onChange={(e) => setFormData({ ...formData, timeLimit: e.target.value })}
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Type</label>
+                      <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="mcq">MCQ</SelectItem>
+                          <SelectItem value="multi-select">Multi-Select</SelectItem>
+                          <SelectItem value="matching">Matching</SelectItem>
+                          <SelectItem value="logic">Logic</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium">Section</label>
+                      <Select value={formData.section} onValueChange={(value) => setFormData({ ...formData, section: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="A">Section A</SelectItem>
+                          <SelectItem value="B">Section B</SelectItem>
+                          <SelectItem value="C">Section C</SelectItem>
+                          <SelectItem value="D">Section D</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Difficulty</label>
+                      <Select value={formData.difficulty} onValueChange={(value) => setFormData({ ...formData, difficulty: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Easy">Easy</SelectItem>
+                          <SelectItem value="Medium">Medium</SelectItem>
+                          <SelectItem value="Hard">Hard</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium">Score</label>
+                      <Input
+                        type="number"
+                        value={formData.score}
+                        onChange={(e) => setFormData({ ...formData, score: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium">Time (s)</label>
+                      <Input
+                        type="number"
+                        value={formData.timeLimit}
+                        onChange={(e) => setFormData({ ...formData, timeLimit: e.target.value })}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddQuestion}>Add Question</Button>
-              </DialogFooter>
-            </DialogContent>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddQuestion}>Add Question</Button>
+                </DialogFooter>
+              </DialogContent>
             </Dialog>
         </CardHeader>
 
