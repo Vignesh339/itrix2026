@@ -735,14 +735,14 @@ export default function AdminDashboard() {
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Assign to Round</label>
-                          <Select value={newParticipant.assignedRound} onValueChange={(value: any) =>
+                          <Select value={newParticipant.assignedRound || "round2"} onValueChange={(value: any) =>
                             setNewParticipant((prev) => ({
                               ...prev,
-                              assignedRound: value,
+                              assignedRound: value as 'round1' | 'round2',
                             }))
                           }>
                             <SelectTrigger>
-                              <SelectValue />
+                              <SelectValue placeholder="Select a round" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="round1">Round 1 - MCQ Quiz</SelectItem>

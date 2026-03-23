@@ -119,12 +119,12 @@ export function QuestionFilterAssign({
 
           <TabsContent value="questions" className="space-y-4">
             <div className="flex gap-2">
-              <Select value={sectionFilter || ""} onValueChange={(v) => setSectionFilter(v || null)}>
+              <Select value={sectionFilter || "all"} onValueChange={(v) => setSectionFilter(v === "all" ? null : v)}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Filter by section" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Sections</SelectItem>
+                  <SelectItem value="all">All Sections</SelectItem>
                   <SelectItem value="A">Section A</SelectItem>
                   <SelectItem value="B">Section B</SelectItem>
                   <SelectItem value="C">Section C</SelectItem>
@@ -132,12 +132,12 @@ export function QuestionFilterAssign({
                 </SelectContent>
               </Select>
 
-              <Select value={difficultyFilter || ""} onValueChange={(v) => setDifficultyFilter(v || null)}>
+              <Select value={difficultyFilter || "all"} onValueChange={(v) => setDifficultyFilter(v === "all" ? null : v)}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Filter by difficulty" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Levels</SelectItem>
+                  <SelectItem value="all">All Levels</SelectItem>
                   <SelectItem value="Easy">Easy</SelectItem>
                   <SelectItem value="Medium">Medium</SelectItem>
                   <SelectItem value="Hard">Hard</SelectItem>

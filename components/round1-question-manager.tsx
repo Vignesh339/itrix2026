@@ -322,7 +322,6 @@ export function Round1QuestionManager() {
               </DialogFooter>
             </DialogContent>
             </Dialog>
-            </div>
         </CardHeader>
 
         <CardContent>
