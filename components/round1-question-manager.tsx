@@ -321,7 +321,8 @@ export function Round1QuestionManager() {
                 <Button onClick={handleAddQuestion}>Add Question</Button>
               </DialogFooter>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+            </div>
         </CardHeader>
 
         <CardContent>
