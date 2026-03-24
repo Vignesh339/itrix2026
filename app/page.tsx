@@ -28,17 +28,27 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null)
   const [isOnline, setIsOnline] = useState(true)
   const [isInitializing, setIsInitializing] = useState(false)
+  // Tracks whether we're hydrated on the client yet
+  const [mounted, setMounted] = useState(false)
+  // Set directly after a successful POST so we never depend on SWR mutate
+  const [manuallyInitialized, setManuallyInitialized] = useState(false)
 
-  // Check initialization status
-  const { data: initStatus, mutate: recheckInit } = useSWR("/api/init", fetcher, {
-    refreshInterval: 0,
-    revalidateOnFocus: false,
-  })
+  // Hydration guard – runs only on the client after first paint
+  useEffect(() => { setMounted(true) }, [])
 
-  // initStatus === undefined  → still loading
-  // initStatus.initialized === true  → ready
-  // initStatus.initialized === false → needs setup
-  const initialized = initStatus?.initialized === true
+  // Check initialization status (client-only via SWR)
+  const { data: initStatus } = useSWR(
+    mounted ? "/api/init" : null,   // don't fetch until hydrated
+    fetcher,
+    { refreshInterval: 0, revalidateOnFocus: false }
+  )
+
+  // Resolved initialized state:
+  // • not yet mounted → false (spinner shown)
+  // • mounted but SWR not back yet → false (spinner shown)
+  // • POST succeeded → true immediately via manuallyInitialized
+  // • SWR returned true → true
+  const initialized = manuallyInitialized || initStatus?.initialized === true
 
   // Monitor online/offline status
   useEffect(() => {
@@ -61,7 +71,7 @@ export default function HomePage() {
     try {
       const response = await fetch("/api/init", { method: "POST" })
       if (response.ok) {
-        await recheckInit({ initialized: true }, false)
+        setManuallyInitialized(true)
       }
     } catch (err) {
       console.error("Failed to initialize database:", err)
