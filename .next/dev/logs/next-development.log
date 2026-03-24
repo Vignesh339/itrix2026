@@ -1,1 +1,4 @@
-{"timestamp":"00:00:00.752","source":"Server","level":"LOG","message":""}
+{"timestamp":"00:00:00.733","source":"Server","level":"LOG","message":""}
+{"timestamp":"00:00:03.971","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:00:05.680","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:00:08.474","source":"Server","level":"LOG","message":"Database seeded successfully"}
