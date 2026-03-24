@@ -974,7 +974,7 @@ function Round1Proctoring({ participantId, enabled }) {
                 setIsFullscreen(true);
                 setWarningType(null);
             } catch (e) {
-                console.error("Fullscreen request failed:", e);
+            // Fullscreen may be blocked in iframe/embedded contexts — not critical
             }
         }
     }["Round1Proctoring.useCallback[enterFullscreen]"], []);

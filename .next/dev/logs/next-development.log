@@ -1,7 +1,13 @@
-{"timestamp":"00:00:02.027","source":"Server","level":"LOG","message":""}
-{"timestamp":"00:00:05.043","source":"Server","level":"LOG","message":"○ Compiling / ..."}
-{"timestamp":"00:00:06.805","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
-{"timestamp":"00:00:16.371","source":"Server","level":"WARN","message":"⚠ Blocked cross-origin request to Next.js dev resource /_next/webpack-hmr from \"de0883b3-7861-4a05-b555-070b43dcbead-00-3eqfdsie5dyd1.spock.replit.dev\".\nCross-origin access to Next.js dev resources is blocked by default for safety.\n\nTo allow this host in development, add it to \"allowedDevOrigins\" in next.config.js and restart the dev server:\n\n// next.config.js\nmodule.exports = {\n  allowedDevOrigins: ['de0883b3-7861-4a05-b555-070b43dcbead-00-3eqfdsie5dyd1.spock.replit.dev'],\n}\n\nRead more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins"}
-{"timestamp":"00:00:24.082","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
-{"timestamp":"00:00:35.355","source":"Server","level":"LOG","message":"Database seeded successfully"}
-{"timestamp":"00:00:41.639","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:00:08.727","source":"Server","level":"WARN","message":"⚠ Slow filesystem detected. The benchmark took 413ms. If /home/runner/workspace/.next/dev is a network drive, consider moving it to a local folder.\nSee more: https://nextjs.org/docs/app/guides/local-development"}
+{"timestamp":"00:00:12.532","source":"Server","level":"LOG","message":""}
+{"timestamp":"00:01:13.060","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:01:15.028","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:01:25.758","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:01:28.121","source":"Server","level":"LOG","message":"Database seeded successfully"}
+{"timestamp":"00:02:32.119","source":"Server","level":"LOG","message":"Database already seeded"}
+{"timestamp":"00:02:41.360","source":"Browser","level":"ERROR","message":"Fullscreen request failed: {}"}
+{"timestamp":"00:02:41.389","source":"Server","level":"ERROR","message":"[browser] \"Fullscreen request failed:\" \"\\u001b[31mTypeError: Permissions check failed\\u001b[39m\\n\\u001b[31mTypeError: Permissions check failed\\u001b[39m\" \"\\u001b[2m(components/round1-proctoring.tsx:43:15)\\u001b[22m\""}
+{"timestamp":"00:02:41.390","source":"Browser","level":"ERROR","message":"Fullscreen request failed: \"\\u001b[31mTypeError: Permissions check failed\\u001b[39m\\n\\u001b[31mTypeError: Permissions check failed\\u001b[39m\" \"\\u001b[2m(components/round1-proctoring.tsx:43:15)\\u001b[22m\""}
+{"timestamp":"00:02:49.441","source":"Server","level":"LOG","message":"Database already seeded"}
+{"timestamp":"00:09:30.197","source":"Server","level":"LOG","message":"✓ Compiled in 251ms"}
+{"timestamp":"00:09:39.696","source":"Server","level":"LOG","message":"Database already seeded"}

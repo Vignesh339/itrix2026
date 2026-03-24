@@ -156,6 +156,13 @@ export async function PATCH(
       logActivity(id, body.eventType, body.details);
       return NextResponse.json({ success: true });
     }
+
+    if (body.action === 'assign_round') {
+      const round = body.assigned_round === 'null' ? null : body.assigned_round;
+      updateParticipant(id, { assigned_round: round });
+      logActivity(id, 'round_assigned', `Assigned to: ${round || 'unassigned'}`);
+      return NextResponse.json({ success: true });
+    }
     
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error) {

@@ -40,7 +40,7 @@ export function Round1Proctoring({ participantId, enabled }: Round1ProctoringPro
       setIsFullscreen(true);
       setWarningType(null);
     } catch (e) {
-      console.error("Fullscreen request failed:", e);
+      // Fullscreen may be blocked in iframe/embedded contexts — not critical
     }
   }, []);
 

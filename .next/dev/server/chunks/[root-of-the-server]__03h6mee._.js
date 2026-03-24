@@ -2420,6 +2420,16 @@ async function PATCH(request, { params }) {
                 success: true
             });
         }
+        if (body.action === 'assign_round') {
+            const round = body.assigned_round === 'null' ? null : body.assigned_round;
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["updateParticipant"])(id, {
+                assigned_round: round
+            });
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logActivity"])(id, 'round_assigned', `Assigned to: ${round || 'unassigned'}`);
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+                success: true
+            });
+        }
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
             error: 'Invalid action'
         }, {
