@@ -3,7 +3,6 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -22,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Spinner } from "@/components/ui/spinner";
-import { UserCheck, Users, BarChart3, CheckCircle, Clock, Trophy, ArrowUpCircle } from "lucide-react";
+import { UserCheck, Users, BarChart3, CheckCircle, Clock, Trophy } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -43,7 +42,6 @@ interface TeamEntry {
   avg_score: number;
   all_completed: boolean;
   any_completed: boolean;
-  promoted_to_round2: boolean;
 }
 
 function buildTeamLeaderboard(participants: ParticipantData[]): TeamEntry[] {
@@ -69,7 +67,6 @@ function buildTeamLeaderboard(participants: ParticipantData[]): TeamEntry[] {
       avg_score,
       all_completed: members.every(m => m.round1_completed),
       any_completed: members.some(m => m.round1_completed),
-      promoted_to_round2: members.every(m => m.assigned_round === "round2"),
     });
   });
 
@@ -79,7 +76,6 @@ function buildTeamLeaderboard(participants: ParticipantData[]): TeamEntry[] {
 export function Round1Management() {
   const [filterRound, setFilterRound] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [promotingTeam, setPromotingTeam] = useState<string | null>(null);
 
   const { data: participantsData, mutate: refreshParticipants } = useSWR(
     "/api/participants",
@@ -100,26 +96,6 @@ export function Round1Management() {
       if (res.ok) refreshParticipants();
     } catch (error) {
       console.error("Failed to assign round:", error);
-    }
-  };
-
-  const handlePromoteTeam = async (team: TeamEntry) => {
-    setPromotingTeam(team.team_name);
-    try {
-      await Promise.all(
-        team.members.map(m =>
-          fetch(`/api/participants/${m.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "assign_round", assigned_round: "round2" }),
-          })
-        )
-      );
-      refreshParticipants();
-    } catch (error) {
-      console.error("Failed to promote team:", error);
-    } finally {
-      setPromotingTeam(null);
     }
   };
 
@@ -232,7 +208,7 @@ export function Round1Management() {
               Team Leaderboard
             </CardTitle>
             <CardDescription>
-              Teams ranked by average Round 1 score. Promote top teams to Round 2.
+              Teams ranked by average Round 1 score.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -245,12 +221,10 @@ export function Round1Management() {
                     <TableHead>Members</TableHead>
                     <TableHead>Avg Score</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {teamLeaderboard.map((team, idx) => {
-                    const isPromoting = promotingTeam === team.team_name;
                     const alreadyPromoted = team.members.every(m => m.assigned_round === "round2");
                     return (
                       <TableRow key={team.team_name} className={idx === 0 ? "bg-yellow-50 dark:bg-yellow-950/20" : ""}>
@@ -304,28 +278,6 @@ export function Round1Management() {
                             <Badge variant="outline">In Progress</Badge>
                           ) : (
                             <Badge variant="outline" className="text-yellow-600">Waiting</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {alreadyPromoted ? (
-                            <span className="text-sm text-muted-foreground flex items-center gap-1">
-                              <CheckCircle className="h-4 w-4 text-green-500" /> Promoted
-                            </span>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="gap-1"
-                              disabled={isPromoting}
-                              onClick={() => handlePromoteTeam(team)}
-                            >
-                              {isPromoting ? (
-                                <Spinner className="h-3 w-3" />
-                              ) : (
-                                <ArrowUpCircle className="h-4 w-4 text-primary" />
-                              )}
-                              Promote to Round 2
-                            </Button>
                           )}
                         </TableCell>
                       </TableRow>
