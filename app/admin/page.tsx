@@ -691,7 +691,7 @@ export default function AdminDashboard() {
                     Add Participant
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
                       {createdParticipant ? "Participant Created!" : "Add New Participant"}
@@ -870,6 +870,9 @@ export default function AdminDashboard() {
                       <TableHead>ID</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Team</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Year</TableHead>
                       <TableHead>Scenario</TableHead>
                       <TableHead>Timer</TableHead>
                       <TableHead>Snippets</TableHead>
@@ -881,7 +884,7 @@ export default function AdminDashboard() {
                   <TableBody>
                     {participants.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                           No participants yet. Add one to get started.
                         </TableCell>
                       </TableRow>
@@ -898,6 +901,15 @@ export default function AdminDashboard() {
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
                               {participant.team_name || "-"}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {participant.phone || "-"}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {participant.email || "-"}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {participant.year || "-"}
                             </TableCell>
                             <TableCell>
                               {participant.scenario_title ? (

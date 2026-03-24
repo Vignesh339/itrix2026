@@ -1171,6 +1171,11 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 function ViolationTracker({ participantId, enabled, onViolation, mode = "round2" }) {
     const lastViolationTime = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])({});
     const [showWarningBanner, setShowWarningBanner] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    // Track whether the browser window currently has OS-level focus.
+    // When the user ALT+TABs to another app, blur fires first (windowHasFocus → false),
+    // then visibilitychange may fire. We use this to tell apart an app-switch
+    // (permitted, e.g. Arduino IDE) from a browser tab-switch (violation).
+    const windowHasFocus = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(true);
     const logViolation = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async (type, details, severity = "warning")=>{
         const now = Date.now();
         const lastTime = lastViolationTime.current[type] || 0;
@@ -1200,23 +1205,29 @@ function ViolationTracker({ participantId, enabled, onViolation, mode = "round2"
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (!enabled) return;
         const isRound2 = mode === "round2";
-        // Tab switch — always a violation for Round 2 (should only use this site + local Arduino IDE, not other browser tabs)
+        // Tab switch — only flag if the window still has OS focus (i.e. the user
+        // switched browser tabs, not ALT+TABbed to another application).
         const handleVisibilityChange = ()=>{
             if (document.hidden) {
-                logViolation("tab_switch", "Participant switched to another browser tab. Only this site and locally installed Arduino IDE are permitted.", "critical");
-                if (isRound2) setShowWarningBanner(true);
-            } else {
-            // They came back — keep the banner visible so they see it
+                if (windowHasFocus.current) {
+                    // Window is focused but tab became hidden → genuine browser tab switch
+                    logViolation("tab_switch", "Participant switched to another browser tab. Only this site and locally installed Arduino IDE are permitted.", "critical");
+                    if (isRound2) setShowWarningBanner(true);
+                }
+            // If !windowHasFocus.current, the user ALT+TABbed to another app —
+            // already handled by handleBlur as "permitted", so we do nothing here.
             }
         };
-        // Window blur — switching to another application
-        // For Round 2: Arduino IDE is permitted. We cannot detect which app was launched
-        // from the browser, so blur is logged as "permitted" since Arduino IDE is expected.
-        // The invigilator can physically verify app usage.
+        // Window blur — switching to another application (e.g. Arduino IDE via ALT+TAB).
+        // Logged as "permitted" since Arduino IDE is expected in Round 2.
         const handleBlur = ()=>{
+            windowHasFocus.current = false;
             if (isRound2) {
                 logViolation("window_blur", "Participant switched away from browser — expected for Arduino IDE use.", "permitted");
             }
+        };
+        const handleFocus = ()=>{
+            windowHasFocus.current = true;
         };
         // Keyboard shortcuts — block new tabs/windows
         const handleKeyDown = (e)=>{
@@ -1228,10 +1239,12 @@ function ViolationTracker({ participantId, enabled, onViolation, mode = "round2"
         };
         document.addEventListener("visibilitychange", handleVisibilityChange);
         window.addEventListener("blur", handleBlur);
+        window.addEventListener("focus", handleFocus);
         document.addEventListener("keydown", handleKeyDown);
         return ()=>{
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("blur", handleBlur);
+            window.removeEventListener("focus", handleFocus);
             document.removeEventListener("keydown", handleKeyDown);
         };
     }, [
@@ -1260,12 +1273,12 @@ function ViolationTracker({ participantId, enabled, onViolation, mode = "round2"
                                 d: "M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
                             }, void 0, false, {
                                 fileName: "[project]/components/violation-tracker.tsx",
-                                lineNumber: 120,
+                                lineNumber: 134,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/components/violation-tracker.tsx",
-                            lineNumber: 119,
+                            lineNumber: 133,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1278,19 +1291,19 @@ function ViolationTracker({ participantId, enabled, onViolation, mode = "round2"
                                     children: "Only this competition site and your locally installed Arduino IDE are permitted. All other applications are a violation."
                                 }, void 0, false, {
                                     fileName: "[project]/components/violation-tracker.tsx",
-                                    lineNumber: 124,
+                                    lineNumber: 138,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/violation-tracker.tsx",
-                            lineNumber: 122,
+                            lineNumber: 136,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/violation-tracker.tsx",
-                    lineNumber: 118,
+                    lineNumber: 132,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1299,13 +1312,13 @@ function ViolationTracker({ participantId, enabled, onViolation, mode = "round2"
                     children: "Dismiss"
                 }, void 0, false, {
                     fileName: "[project]/components/violation-tracker.tsx",
-                    lineNumber: 129,
+                    lineNumber: 143,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/components/violation-tracker.tsx",
-            lineNumber: 117,
+            lineNumber: 131,
             columnNumber: 7
         }, this);
     }

@@ -17,6 +17,11 @@ export function ViolationTracker({
 }: ViolationTrackerProps) {
   const lastViolationTime = useRef<Record<string, number>>({});
   const [showWarningBanner, setShowWarningBanner] = useState(false);
+  // Track whether the browser window currently has OS-level focus.
+  // When the user ALT+TABs to another app, blur fires first (windowHasFocus → false),
+  // then visibilitychange may fire. We use this to tell apart an app-switch
+  // (permitted, e.g. Arduino IDE) from a browser tab-switch (violation).
+  const windowHasFocus = useRef(true);
 
   const logViolation = useCallback(
     async (
@@ -53,25 +58,28 @@ export function ViolationTracker({
 
     const isRound2 = mode === "round2";
 
-    // Tab switch — always a violation for Round 2 (should only use this site + local Arduino IDE, not other browser tabs)
+    // Tab switch — only flag if the window still has OS focus (i.e. the user
+    // switched browser tabs, not ALT+TABbed to another application).
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        logViolation(
-          "tab_switch",
-          "Participant switched to another browser tab. Only this site and locally installed Arduino IDE are permitted.",
-          "critical"
-        );
-        if (isRound2) setShowWarningBanner(true);
-      } else {
-        // They came back — keep the banner visible so they see it
+        if (windowHasFocus.current) {
+          // Window is focused but tab became hidden → genuine browser tab switch
+          logViolation(
+            "tab_switch",
+            "Participant switched to another browser tab. Only this site and locally installed Arduino IDE are permitted.",
+            "critical"
+          );
+          if (isRound2) setShowWarningBanner(true);
+        }
+        // If !windowHasFocus.current, the user ALT+TABbed to another app —
+        // already handled by handleBlur as "permitted", so we do nothing here.
       }
     };
 
-    // Window blur — switching to another application
-    // For Round 2: Arduino IDE is permitted. We cannot detect which app was launched
-    // from the browser, so blur is logged as "permitted" since Arduino IDE is expected.
-    // The invigilator can physically verify app usage.
+    // Window blur — switching to another application (e.g. Arduino IDE via ALT+TAB).
+    // Logged as "permitted" since Arduino IDE is expected in Round 2.
     const handleBlur = () => {
+      windowHasFocus.current = false;
       if (isRound2) {
         logViolation(
           "window_blur",
@@ -79,6 +87,10 @@ export function ViolationTracker({
           "permitted"
         );
       }
+    };
+
+    const handleFocus = () => {
+      windowHasFocus.current = true;
     };
 
     // Keyboard shortcuts — block new tabs/windows
@@ -100,11 +112,13 @@ export function ViolationTracker({
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [enabled, logViolation, mode]);
