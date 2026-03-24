@@ -63,12 +63,10 @@ export default function HomePage() {
     try {
       const response = await fetch("/api/init", { method: "POST" })
       if (response.ok) {
-        setInitialized(true)
-        checkInit()
+        window.location.reload()
       }
     } catch (err) {
       console.error("Failed to initialize database:", err)
-    } finally {
       setIsInitializing(false)
     }
   }
