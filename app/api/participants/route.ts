@@ -48,6 +48,15 @@ export async function POST(request: NextRequest) {
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
+    if (!teamName) {
+      return NextResponse.json({ error: 'Team name is required' }, { status: 400 });
+    }
+    if (!phone) {
+      return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
+    }
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
 
     // Generate unique ID if not provided
     let participantId = providedId?.toUpperCase();

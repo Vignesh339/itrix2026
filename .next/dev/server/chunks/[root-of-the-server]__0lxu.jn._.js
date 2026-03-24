@@ -2330,6 +2330,27 @@ async function POST(request) {
                 status: 400
             });
         }
+        if (!teamName) {
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+                error: 'Team name is required'
+            }, {
+                status: 400
+            });
+        }
+        if (!phone) {
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+                error: 'Phone number is required'
+            }, {
+                status: 400
+            });
+        }
+        if (!email) {
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+                error: 'Email is required'
+            }, {
+                status: 400
+            });
+        }
         // Generate unique ID if not provided
         let participantId = providedId?.toUpperCase();
         if (!participantId) {

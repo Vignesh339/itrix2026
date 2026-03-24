@@ -246,7 +246,7 @@ export default function AdminDashboard() {
   };
 
   const createParticipant = async () => {
-    if (!newParticipant.name) return;
+    if (!newParticipant.name || !newParticipant.teamName || !newParticipant.phone || !newParticipant.email) return;
 
     try {
       const res = await fetch("/api/participants", {
@@ -258,8 +258,8 @@ export default function AdminDashboard() {
           id: newParticipant.id || undefined,
           assignedRound: newParticipant.assignedRound,
           autoAssignScenario: newParticipant.assignedRound === 'round2',
-          phone: newParticipant.phone || undefined,
-          email: newParticipant.email || undefined,
+          phone: newParticipant.phone,
+          email: newParticipant.email,
           year: newParticipant.year || undefined,
         }),
       });
@@ -755,9 +755,9 @@ export default function AdminDashboard() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Team Name</label>
+                          <label className="text-sm font-medium">Team Name *</label>
                           <Input
-                            placeholder="Enter team name (optional)"
+                            placeholder="Enter team name"
                             value={newParticipant.teamName}
                             onChange={(e) =>
                               setNewParticipant((prev) => ({
@@ -769,7 +769,7 @@ export default function AdminDashboard() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <label className="text-sm font-medium">Phone (Optional)</label>
+                            <label className="text-sm font-medium">Phone *</label>
                             <Input
                               placeholder="e.g. 0123456789"
                               value={newParticipant.phone}
@@ -796,7 +796,7 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Email (Optional)</label>
+                          <label className="text-sm font-medium">Email *</label>
                           <Input
                             placeholder="e.g. participant@email.com"
                             value={newParticipant.email}
@@ -852,7 +852,7 @@ export default function AdminDashboard() {
                         <Button variant="outline" onClick={() => setDialogOpen(false)}>
                           Cancel
                         </Button>
-                        <Button onClick={createParticipant} disabled={!newParticipant.name}>
+                        <Button onClick={createParticipant} disabled={!newParticipant.name || !newParticipant.teamName || !newParticipant.phone || !newParticipant.email}>
                           Create Participant
                         </Button>
                       </DialogFooter>
