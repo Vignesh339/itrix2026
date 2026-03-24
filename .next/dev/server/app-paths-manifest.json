@@ -1,13 +1,4 @@
 {
-  "/admin/page": "app/admin/page.js",
-  "/api/admin/timer/route": "app/api/admin/timer/route.js",
   "/api/init/route": "app/api/init/route.js",
-  "/api/logs/route": "app/api/logs/route.js",
-  "/api/participants/[id]/route": "app/api/participants/[id]/route.js",
-  "/api/participants/route": "app/api/participants/route.js",
-  "/api/round1/questions/route": "app/api/round1/questions/route.js",
-  "/api/round1/responses/route": "app/api/round1/responses/route.js",
-  "/api/scenarios/route": "app/api/scenarios/route.js",
-  "/page": "app/page.js",
-  "/round1/[id]/page": "app/round1/[id]/page.js"
+  "/page": "app/page.js"
 }
