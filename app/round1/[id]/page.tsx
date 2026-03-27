@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Brain, CheckCircle2, Clock3, Layers3, Lock, Radar } from "lucide-react";
+import { Brain, CheckCircle2, Clock3, Layers3, Radar } from "lucide-react";
 
 import { Round1Question } from "@/components/round1-question";
 import { Round1Proctoring } from "@/components/round1-proctoring";
@@ -139,11 +139,8 @@ export default function Round1QuizPage() {
   const [isSavingAnswer, setIsSavingAnswer] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
-  const [sectionMoveDialogOpen, setSectionMoveDialogOpen] = useState(false);
-  const [nextSegment, setNextSegment] = useState<SegmentId | null>(null);
 
   const [activeSegment, setActiveSegment] = useState<SegmentId>("mcq");
-  const [unlockedSection, setUnlockedSection] = useState(0);
 
   const questionsBySegment = useMemo(() => {
     const grouped: Record<SegmentId, Round1QuestionData[]> = {
@@ -183,12 +180,12 @@ export default function Round1QuizPage() {
 
   const committedSegments = useMemo(
     () => ({
-      mcq: unlockedSection >= 1,
-      scenario: unlockedSection >= 2,
-      connection: unlockedSection >= 3,
+      mcq: false,
+      scenario: false,
+      connection: false,
       snippet: false,
     }),
-    [unlockedSection]
+    []
   );
 
   useEffect(() => {
@@ -224,21 +221,13 @@ export default function Round1QuizPage() {
         setAnswersByQuestionId(existingAnswers);
 
         const answeredIds = new Set(Object.keys(existingAnswers).map((id) => Number(id)));
-        const scenarioQuestions = data.questions.filter((q: Round1QuestionData) => q.section === "B");
-        const connectionQuestions = data.questions.filter((q: Round1QuestionData) => q.section === "C");
-        const snippetQuestions = data.questions.filter((q: Round1QuestionData) => q.section === "D");
-
-        const hasScenarioAnswer = scenarioQuestions.some((q: Round1QuestionData) => answeredIds.has(q.id));
-        const hasAllConnectionAnswers =
-          connectionQuestions.length > 0 && connectionQuestions.every((q: Round1QuestionData) => answeredIds.has(q.id));
-        const hasAllSnippetAnswers =
-          snippetQuestions.length > 0 && snippetQuestions.every((q: Round1QuestionData) => answeredIds.has(q.id));
-
-        const inferredUnlocked = hasAllSnippetAnswers ? 3 : hasAllConnectionAnswers ? 2 : hasScenarioAnswer ? 1 : 0;
-        const serverUnlocked = typeof data?.unlockedSection === "number" ? data.unlockedSection : 0;
-        const effectiveUnlocked = Math.max(serverUnlocked, inferredUnlocked);
-        setUnlockedSection(effectiveUnlocked);
-        setActiveSegment(SEGMENT_BY_INDEX[Math.max(0, Math.min(3, effectiveUnlocked))]);
+        const firstAnsweredId = Number(Object.keys(existingAnswers)[0]);
+        if (!Number.isNaN(firstAnsweredId)) {
+          const firstAnsweredQuestion = data.questions.find((q: Round1QuestionData) => q.id === firstAnsweredId);
+          if (firstAnsweredQuestion) {
+            setActiveSegment(getSegmentId(firstAnsweredQuestion));
+          }
+        }
 
         setQuizState("started");
         setIsLoading(false);
@@ -285,9 +274,6 @@ export default function Round1QuizPage() {
   const handleAnswerChange = useCallback(async (question: Round1QuestionData, answer: string | string[]) => {
     if (!participantId) return;
 
-    const segment = getSegmentId(question);
-    if (committedSegments[segment]) return;
-
     try {
       setAnswersByQuestionId((prev) => ({ ...prev, [question.id]: answer }));
       setIsSavingAnswer(true);
@@ -309,34 +295,6 @@ export default function Round1QuizPage() {
       setIsSavingAnswer(false);
     }
   }, [participantId, committedSegments]);
-
-  const commitCurrentSegment = useCallback(async () => {
-    if (!participantId) return;
-
-    if (activeSegment === "snippet") {
-      setSubmitDialogOpen(true);
-      return;
-    }
-
-    const nextIndex = Math.min(3, SEGMENT_INDEX[activeSegment] + 1);
-    const next = SEGMENT_BY_INDEX[nextIndex];
-
-    const res = await fetch("/api/round1/questions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "advance_section", participantId }),
-    });
-
-    if (!res.ok) {
-      setError("Failed to move to next section");
-      return;
-    }
-
-    const data = await res.json();
-    const serverUnlocked = typeof data?.unlockedSection === "number" ? data.unlockedSection : nextIndex;
-    setUnlockedSection(serverUnlocked);
-    setActiveSegment(next);
-  }, [activeSegment, participantId]);
 
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -503,7 +461,7 @@ export default function Round1QuizPage() {
                 <Brain className="h-6 w-6 text-cyan-200" />
                 Round 1 - Segmented Test
               </h1>
-              <p className="mt-1 text-sm text-cyan-100/70">Secure assessment interface with section locking and automatic answer persistence.</p>
+              <p className="mt-1 text-sm text-cyan-100/70">Secure assessment interface with automatic answer persistence.</p>
             </div>
             <div className="flex items-center gap-3">
               <Badge variant="outline" className="gap-1 border-cyan-200/30 bg-cyan-400/10 px-3 py-1 text-cyan-100">
@@ -588,11 +546,7 @@ export default function Round1QuizPage() {
               </CardHeader>
               <CardContent className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm text-cyan-100/75">{SEGMENTS.find((s) => s.id === activeSegment)?.subtitle}</p>
-                {committedSegments[activeSegment] ? (
-                  <Badge variant="secondary" className="gap-1 bg-amber-400/20 text-amber-100"><Lock className="h-3 w-3" /> Segment Locked</Badge>
-                ) : (
-                  <Badge variant="outline" className="border-cyan-200/30 text-cyan-100">Editable</Badge>
-                )}
+                <Badge variant="outline" className="border-cyan-200/30 text-cyan-100">Editable</Badge>
               </CardContent>
             </Card>
 
@@ -605,7 +559,7 @@ export default function Round1QuizPage() {
                   currentAnswer={answersByQuestionId[question.id]}
                   onAnswerChange={(answer) => handleAnswerChange(question, answer)}
                   isSaving={isSavingAnswer}
-                  readOnly={committedSegments[activeSegment]}
+                  readOnly={false}
                   showNavigation={false}
                 />
               </div>
@@ -620,7 +574,7 @@ export default function Round1QuizPage() {
                   currentAnswer={answersByQuestionId[question.id]}
                   onAnswerChange={(answer) => handleAnswerChange(question, answer)}
                   isSaving={isSavingAnswer}
-                  readOnly={committedSegments[activeSegment]}
+                  readOnly={false}
                   showNavigation={false}
                 />
               </div>
@@ -643,38 +597,13 @@ export default function Round1QuizPage() {
                       currentAnswer={answersByQuestionId[question.id]}
                       onAnswerChange={(answer) => handleAnswerChange(question, answer)}
                       isSaving={isSavingAnswer}
-                      readOnly={committedSegments[activeSegment]}
+                      readOnly={false}
                       showNavigation={false}
                     />
                   </div>
                 ))}
               </div>
             ))}
-
-            <Card className="border-cyan-200/20 bg-slate-950/60">
-              <CardContent className="pt-6 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-cyan-100/75">
-                  {segmentCompletion[activeSegment].answered}/{segmentCompletion[activeSegment].total} answered
-                </p>
-                <Button
-                  onClick={() => {
-                    if (activeSegment === "snippet") {
-                      void commitCurrentSegment();
-                      return;
-                    }
-                    const nextIndex = Math.min(3, SEGMENT_INDEX[activeSegment] + 1);
-                    setNextSegment(SEGMENT_BY_INDEX[nextIndex]);
-                    setSectionMoveDialogOpen(true);
-                  }}
-                  disabled={isSavingAnswer}
-                >
-                  {activeSegment === "mcq" && "Move to Scenario Section"}
-                  {activeSegment === "scenario" && "Move to Image-Based Circuit Q&A Section"}
-                  {activeSegment === "connection" && "Move to Interactive Knowledge Challenge Section"}
-                  {activeSegment === "snippet" && "Complete Segment and Review Submit"}
-                </Button>
-              </CardContent>
-            </Card>
           </section>
         </div>
       </div>
@@ -702,28 +631,6 @@ export default function Round1QuizPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={sectionMoveDialogOpen} onOpenChange={setSectionMoveDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Move To Next Section?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will lock your current section answers. You can still switch to any section from the sidebar.
-              Unanswered questions in the locked section will remain unanswered.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Stay Here</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={async () => {
-                await commitCurrentSegment();
-                setSectionMoveDialogOpen(false);
-              }}
-            >
-              Yes, Move Next
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </main>
   );
 }
