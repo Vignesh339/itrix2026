@@ -1,5 +1,1 @@
-{"timestamp":"00:00:00.946","source":"Server","level":"LOG","message":""}
-{"timestamp":"00:00:06.984","source":"Browser","level":"WARN","message":"THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead."}
-{"timestamp":"00:00:06.997","source":"Server","level":"WARN","message":"[browser] \"\\u001b[33mTHREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.\\u001b[39m\" \"\\u001b[2m(https://fdf17fe4-31a7-423b-a2dc-4c36b6dff9bb-00-11v1x3zdxe85k.worf.replit.dev/__replco/static/devtools/injected.js:37:27)\\u001b[22m\""}
-{"timestamp":"00:00:06.997","source":"Browser","level":"WARN","message":"\u001b[33mTHREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.\u001b[39m"}
-{"timestamp":"00:00:07.110","source":"Browser","level":"LOG","message":"THREE.WebGLRenderer: Context Lost."}
+{"timestamp":"00:00:01.004","source":"Server","level":"LOG","message":""}

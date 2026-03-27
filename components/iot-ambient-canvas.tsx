@@ -1,7 +1,7 @@
 "use client"
 
 import { Canvas, useFrame } from "@react-three/fiber"
-import { useMemo, useRef } from "react"
+import { useMemo, useRef, useState, useEffect } from "react"
 
 function DataRing({ radius, speed, color }: { radius: number; speed: number; color: string }) {
   const ringRef = useRef<any>(null)
@@ -25,18 +25,15 @@ function DataPoints() {
   const positions = useMemo(() => {
     const count = 900
     const arr = new Float32Array(count * 3)
-
     for (let i = 0; i < count; i++) {
       const i3 = i * 3
       const angle = Math.random() * Math.PI * 2
       const radius = 1.2 + Math.random() * 3.5
       const spread = (Math.random() - 0.5) * 2.8
-
       arr[i3] = Math.cos(angle) * radius
       arr[i3 + 1] = spread
       arr[i3 + 2] = Math.sin(angle) * radius
     }
-
     return arr
   }, [])
 
@@ -72,9 +69,45 @@ function Scene() {
 }
 
 export function IotAmbientCanvas() {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    try {
+      const testCanvas = document.createElement("canvas")
+      const ctx = testCanvas.getContext("webgl") || testCanvas.getContext("experimental-webgl")
+      if (!ctx) return
+      const ext = (ctx as WebGLRenderingContext).getExtension("WEBGL_lose_context")
+      ext?.loseContext()
+      setVisible(true)
+    } catch {
+      // WebGL not available — skip canvas
+    }
+
+    const onRejection = (event: PromiseRejectionEvent) => {
+      const msg: string = event.reason?.message ?? ""
+      if (msg.includes("WebGL") || msg.includes("webgl")) {
+        event.preventDefault()
+        setVisible(false)
+      }
+    }
+    window.addEventListener("unhandledrejection", onRejection)
+    return () => window.removeEventListener("unhandledrejection", onRejection)
+  }, [])
+
+  if (!visible) return null
+
   return (
     <div className="pointer-events-none absolute inset-0 opacity-75">
-      <Canvas camera={{ position: [0, 0, 5], fov: 55 }} dpr={[1, 1.5]}>
+      <Canvas
+        camera={{ position: [0, 0, 5], fov: 55 }}
+        dpr={[1, 1.5]}
+        onCreated={({ gl }) => {
+          gl.domElement.addEventListener("webglcontextlost", (e) => {
+            e.preventDefault()
+            setVisible(false)
+          })
+        }}
+      >
         <Scene />
       </Canvas>
     </div>

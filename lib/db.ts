@@ -955,7 +955,7 @@ export function startOrGetRound1Session(participantId: string, perParticipantQue
 
   // Required structure:
   // Section A: 20 MCQ (10 Easy + 10 Hard)
-  // Section B: 2 scenario groups x 5 questions each
+  // Section B: 2 scenario groups x 10 questions each = 20 total
   // Section C: 20 image-based circuit MCQs (2 circuits x 10)
   // Section D: 6 interactive challenge questions
   const easyMcq = shuffled(all.filter((q) => q.type === 'mcq' && q.difficulty === 'Easy'));
@@ -983,14 +983,14 @@ export function startOrGetRound1Session(participantId: string, perParticipantQue
   const selectedScenarioGroups = shuffled(Array.from(groupedScenarios.keys())).slice(0, 2);
   const selectedScenarioQuestions: Round1Question[] = [];
   selectedScenarioGroups.forEach((groupId) => {
-    selectedScenarioQuestions.push(...(groupedScenarios.get(groupId) || []).sort(questionOrderByTitle).slice(0, 5));
+    selectedScenarioQuestions.push(...(groupedScenarios.get(groupId) || []).sort(questionOrderByTitle));
   });
 
-  if (selectedScenarioQuestions.length < 10) {
+  if (selectedScenarioQuestions.length < 20) {
     const selectedIds = new Set(selectedScenarioQuestions.map((q) => q.id));
     const fallbackScenario = shuffled(
       scenarioQuestions.filter((q) => !selectedIds.has(q.id))
-    ).slice(0, 10 - selectedScenarioQuestions.length);
+    ).slice(0, 20 - selectedScenarioQuestions.length);
     selectedScenarioQuestions.push(...fallbackScenario);
   }
 
@@ -1024,7 +1024,7 @@ export function startOrGetRound1Session(participantId: string, perParticipantQue
 
   const questions = [
     ...selectedMcq.slice(0, 20),
-    ...selectedScenarioQuestions.slice(0, 10),
+    ...selectedScenarioQuestions.slice(0, 20),
     ...selectedCircuitQuestions.slice(0, 20),
     ...sectionDQuestions,
   ];
