@@ -563,7 +563,9 @@ export function getAllParticipants(): Participant[] {
     const scenario = p.scenario_id ? store.scenarios.get(p.scenario_id) : null;
     const snippetsUnlocked = store.snippetUnlocks.filter(s => s.participant_id === p.id).length;
     const violationCount = store.violations.filter(v => v.participant_id === p.id).length;
-    const round1Answered = store.round1Responses.filter(r => r.participant_id === p.id).length;
+    const participantResponses = store.round1Responses.filter(r => r.participant_id === p.id);
+    const round1Answered = participantResponses.length;
+    const liveRound1Score = participantResponses.reduce((sum, response) => sum + (response.score_obtained || 0), 0);
     const round1Session = store.round1Sessions.get(p.id);
     const round1Result = store.round1Results.get(p.id);
     const round1TotalQuestions = round1Result?.total_questions || round1Session?.question_ids.length || 0;
@@ -583,6 +585,7 @@ export function getAllParticipants(): Participant[] {
 
     return {
       ...p,
+      round1_score: round1Result?.total_score ?? liveRound1Score,
       team_name: p.team_name,
       scenario_title: scenario?.title,
       snippets_unlocked: snippetsUnlocked,

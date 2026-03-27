@@ -140,7 +140,10 @@ function toDisplayAnswer(item: Round1ReviewItem, value: string | string[] | unde
 }
 
 function buildTeamLeaderboard(participants: ParticipantData[]): TeamEntry[] {
-  const round1Participants = participants.filter(p => p.assigned_round === "round1");
+  const round1Participants = participants.filter((p) => {
+    const hasRound1Data = (p.round1_total_questions || 0) > 0 || (p.round1_answered || 0) > 0 || !!p.round1_completed;
+    return hasRound1Data || p.assigned_round === "round1";
+  });
   const teamMap = new Map<string, ParticipantData[]>();
 
   for (const p of round1Participants) {
@@ -151,10 +154,10 @@ function buildTeamLeaderboard(participants: ParticipantData[]): TeamEntry[] {
 
   const entries: TeamEntry[] = [];
   teamMap.forEach((members, team_name) => {
-    const completedMembers = members.filter(m => m.round1_completed);
+    const scoredMembers = members.filter((m) => (m.round1_answered || 0) > 0 || !!m.round1_completed);
     const avg_score =
-      completedMembers.length > 0
-        ? completedMembers.reduce((sum, m) => sum + (m.round1_score || 0), 0) / completedMembers.length
+      scoredMembers.length > 0
+        ? scoredMembers.reduce((sum, m) => sum + (m.round1_score || 0), 0) / scoredMembers.length
         : 0;
     entries.push({
       team_name: team_name === "__no_team__" ? "(No Team)" : team_name,
