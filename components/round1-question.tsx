@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { ConnectionWiringCanvas } from "@/components/connection-wiring-canvas";
+import { DragDropMatching } from "@/components/drag-drop-matching";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,16 +74,6 @@ export function Round1Question({
   const [matchingAnswers, setMatchingAnswers] = useState<Record<string, string>>({});
   const [snippetRunPending, setSnippetRunPending] = useState(false);
   const [snippetRunResult, setSnippetRunResult] = useState<SnippetCompileResult | null>(null);
-
-  const shuffledMatchingOptions = useMemo(() => {
-    if (!question.matchingPairs) return [];
-    const pairs = [...question.matchingPairs];
-    for (let i = pairs.length - 1; i > 0; i--) {
-      const j = Math.floor(((question.id * 1009 + i * 37) % (i + 1)));
-      [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
-    }
-    return pairs;
-  }, [question.id, question.matchingPairs]);
 
   useEffect(() => {
     if (typeof currentAnswer === "string") {
@@ -262,32 +253,21 @@ export function Round1Question({
           {isMatchingType(question.type) && (
             <div className="space-y-3">
               <h4 className="text-sm font-medium">Match Items</h4>
-              <div className="space-y-3">
-                {question.matchingPairs?.map((pair) => (
-                  <div key={`left-${pair.id}`} className="space-y-2 rounded-lg border border-white/15 bg-slate-900/45 p-3 text-sm">
-                    <div className="font-medium text-cyan-50">{pair.left}</div>
-                    <select
-                      className="w-full rounded-md border border-white/20 bg-slate-950 px-3 py-2 text-sm text-cyan-50"
-                      value={matchingAnswers[pair.id] || ""}
-                      disabled={readOnly}
-                      onChange={(e) => {
-                        if (readOnly) return;
-                        const rightId = e.target.value;
-                        const next = { ...matchingAnswers, [pair.id]: rightId };
-                        setMatchingAnswers(next);
-                        onAnswerChange(JSON.stringify(next));
-                      }}
-                    >
-                      <option value="">Select matching right item</option>
-                      {shuffledMatchingOptions.map((rightPair) => (
-                        <option key={`option-${pair.id}-${rightPair.id}`} value={rightPair.id}>
-                          {rightPair.right}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
-              </div>
+              <DragDropMatching
+                pairs={question.matchingPairs || []}
+                currentAnswer={typeof currentAnswer === "string" ? currentAnswer : undefined}
+                readOnly={readOnly}
+                questionId={question.id}
+                onAnswerChange={(answer) => {
+                  try {
+                    const parsed = JSON.parse(answer);
+                    setMatchingAnswers(parsed && typeof parsed === "object" ? parsed : {});
+                  } catch {
+                    setMatchingAnswers({});
+                  }
+                  onAnswerChange(answer);
+                }}
+              />
             </div>
           )}
 
