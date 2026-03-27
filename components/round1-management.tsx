@@ -29,7 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Spinner } from "@/components/ui/spinner";
-import { UserCheck, Users, BarChart3, CheckCircle, Clock, Trophy, ListChecks, ChevronLeft, ChevronRight } from "lucide-react";
+import { UserCheck, Users, BarChart3, CheckCircle, Clock, Trophy, ListChecks, ChevronLeft, ChevronRight, Download } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -183,6 +183,10 @@ export function Round1Management() {
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
   const [promoteThreshold, setPromoteThreshold] = useState("60");
   const [promoting, setPromoting] = useState(false);
+
+  const exportRound1Csv = () => {
+    window.location.href = "/api/admin/export";
+  };
 
   const { data: participantsData, mutate: refreshParticipants } = useSWR(
     "/api/participants",
@@ -587,6 +591,10 @@ export function Round1Management() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
+          <Button variant="outline" onClick={exportRound1Csv}>
+            <Download className="mr-2 h-4 w-4" />
+            Export Round 1 CSV
+          </Button>
           <div className="w-24">
             <Input
               value={promoteThreshold}
