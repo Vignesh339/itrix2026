@@ -331,7 +331,7 @@ export function HomePageClient({ serverInitialized }: { serverInitialized: boole
           </div>
           <div className="sensor-sprint-banner max-w-4xl">
             <span className="sensor-sprint-chip">ITRIX 2026 • Circuit Mode</span>
-            <h1 className="sensor-sprint-title">Sensor Sprint</h1>
+            <h1 className="sensor-sprint-title">Sensor Sprint Control Arena</h1>
             <div className="sensor-sprint-trace" aria-hidden>
               <span />
               <span />
@@ -346,22 +346,7 @@ export function HomePageClient({ serverInitialized }: { serverInitialized: boole
           </p>
         </div>
 
-        <div className="mb-10 grid gap-3 sm:grid-cols-3 md:mb-14">
-          <div className="js-kpi glass-kpi">
-            <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/70">Signal Pulse</p>
-            <p className="mt-1 text-2xl font-semibold">Realtime</p>
-          </div>
-          <div className="js-kpi glass-kpi">
-            <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/70">Challenge Grid</p>
-            <p className="mt-1 text-2xl font-semibold">8 Scenario Tracks</p>
-          </div>
-          <div className="js-kpi glass-kpi">
-            <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/70">Execution Mode</p>
-            <p className="mt-1 text-2xl font-semibold">Timed & Proctored</p>
-          </div>
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="mt-8 grid gap-5 md:grid-cols-2">
           <Card className="js-panel border-white/10 bg-slate-950/60 backdrop-blur-xl transition-colors hover:border-cyan-300/50">
             <CardHeader>
               <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-300/30 bg-cyan-400/15">

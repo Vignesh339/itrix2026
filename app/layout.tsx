@@ -13,24 +13,11 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: 'IoT Laboratory - Component Management System',
-  description: 'IoT Laboratory management system for tracking components, scenarios, and competition participants',
+  title: 'ITRIX 2026 | Sensor Sprint Control Arena',
+  description: 'Sensor Sprint event control platform for participant routing, Round 1 and Round 2 execution, and live administration.',
   generator: 'v0.app',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
+    icon: '/icon.svg',
     apple: '/apple-icon.png',
   },
 }
