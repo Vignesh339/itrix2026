@@ -45,6 +45,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       name,
+      member1Name,
+      member2Name,
+      member3Name,
       teamName,
       id: providedId,
       autoAssignScenario = true,
@@ -54,33 +57,63 @@ export async function POST(request: NextRequest) {
       year,
       college,
       department,
+      member1Phone,
+      member1Email,
+      member1Year,
+      member1College,
+      member1Department,
+      member2Phone,
+      member2Email,
+      member2Year,
+      member2College,
+      member2Department,
+      member3Phone,
+      member3Email,
+      member3Year,
+      member3College,
+      member3Department,
     } = body;
 
-    if (!name) {
+    const leadName = member1Name || name;
+    const leadPhone = member1Phone || phone;
+    const leadEmail = member1Email || email;
+    const leadYear = member1Year || year;
+    const leadCollege = member1College || college;
+    const leadDepartment = member1Department || department;
+
+    if (!leadName) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
     if (!teamName) {
       return NextResponse.json({ error: 'Team name is required' }, { status: 400 });
     }
-    if (!phone) {
+    if (!leadPhone) {
       return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
     }
-    if (!email) {
+    if (!leadEmail) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
-    if (!college) {
+    if (!leadCollege) {
       return NextResponse.json({ error: 'College is required' }, { status: 400 });
     }
-    if (!department) {
+    if (!leadDepartment) {
       return NextResponse.json({ error: 'Department is required' }, { status: 400 });
     }
 
+    if (member2Name && (!member2Phone || !member2Email || !member2College || !member2Department)) {
+      return NextResponse.json({ error: 'Member 2 requires phone, email, college, and department.' }, { status: 400 });
+    }
+
+    if (member3Name && (!member3Phone || !member3Email || !member3College || !member3Department)) {
+      return NextResponse.json({ error: 'Member 3 requires phone, email, college, and department.' }, { status: 400 });
+    }
+
     const normalizedTeam = String(teamName).trim().toLowerCase();
-    const teamMembersCount = getAllParticipants().filter(
+    const teamExists = getAllParticipants().some(
       (participant) => (participant.team_name || '').trim().toLowerCase() === normalizedTeam
-    ).length;
-    if (teamMembersCount >= 3) {
-      return NextResponse.json({ error: 'A team can have at most 3 members.' }, { status: 400 });
+    );
+    if (teamExists) {
+      return NextResponse.json({ error: 'This team already has a login. Use one team login for all rounds.' }, { status: 400 });
     }
 
     // Generate unique ID if not provided
@@ -100,15 +133,27 @@ export async function POST(request: NextRequest) {
 
     // Create participant with assigned round
     const participant = createParticipant(
-      name,
+      leadName,
       participantId,
       teamName,
       assignedRound,
-      phone,
-      email,
-      year,
-      college,
-      department
+      leadPhone,
+      leadEmail,
+      leadYear,
+      leadCollege,
+      leadDepartment,
+      member2Name,
+      member3Name,
+      member2Phone,
+      member2Email,
+      member2Year,
+      member2College,
+      member2Department,
+      member3Phone,
+      member3Email,
+      member3Year,
+      member3College,
+      member3Department
     );
 
     // Auto-assign a random scenario if enabled and participant is for Round 2
@@ -135,7 +180,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    logActivity(participantId, 'participant_created', `New participant created: ${name} (${assignedRound || 'unassigned'})`);
+    logActivity(participantId, 'participant_created', `New participant created: ${leadName} (${assignedRound || 'unassigned'})`);
 
     return NextResponse.json({ 
       success: true, 

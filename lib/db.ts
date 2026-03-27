@@ -6,6 +6,24 @@ import { evaluateSnippetAnswer, parseRequiredKeywords } from '@/lib/snippet-eval
 export interface Participant {
   id: string;
   name: string;
+  member1_name?: string;
+  member1_phone?: string;
+  member1_email?: string;
+  member1_college?: string;
+  member1_department?: string;
+  member1_year?: string;
+  member2_name?: string;
+  member2_phone?: string;
+  member2_email?: string;
+  member2_college?: string;
+  member2_department?: string;
+  member2_year?: string;
+  member3_name?: string;
+  member3_phone?: string;
+  member3_email?: string;
+  member3_college?: string;
+  member3_department?: string;
+  member3_year?: string;
   team_name?: string;
   college?: string;
   department?: string;
@@ -579,12 +597,42 @@ export function createParticipant(
   email?: string,
   year?: string,
   college?: string,
-  department?: string
+  department?: string,
+  member2Name?: string,
+  member3Name?: string,
+  member2Phone?: string,
+  member2Email?: string,
+  member2Year?: string,
+  member2College?: string,
+  member2Department?: string,
+  member3Phone?: string,
+  member3Email?: string,
+  member3Year?: string,
+  member3College?: string,
+  member3Department?: string
 ): Participant {
   const store = getStore();
   const participant: Participant = {
     id,
     name,
+    member1_name: name,
+    member1_phone: phone,
+    member1_email: email,
+    member1_college: college,
+    member1_department: department,
+    member1_year: year,
+    member2_name: member2Name,
+    member2_phone: member2Phone,
+    member2_email: member2Email,
+    member2_college: member2College,
+    member2_department: member2Department,
+    member2_year: member2Year,
+    member3_name: member3Name,
+    member3_phone: member3Phone,
+    member3_email: member3Email,
+    member3_college: member3College,
+    member3_department: member3Department,
+    member3_year: member3Year,
     team_name: teamName,
     college,
     department,

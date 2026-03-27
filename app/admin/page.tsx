@@ -65,7 +65,26 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 interface Participant {
   id: string;
   name: string;
+  member1_name?: string;
+  member1_phone?: string;
+  member1_email?: string;
+  member1_college?: string;
+  member1_department?: string;
+  member1_year?: string;
+  member2_name?: string;
+  member2_phone?: string;
+  member2_email?: string;
+  member2_college?: string;
+  member2_department?: string;
+  member2_year?: string;
+  member3_name?: string;
+  member3_phone?: string;
+  member3_email?: string;
+  member3_college?: string;
+  member3_department?: string;
+  member3_year?: string;
   team_name?: string;
+  assigned_round?: 'round1' | 'round2' | null;
   college?: string;
   department?: string;
   scenario_id: number | null;
@@ -116,15 +135,27 @@ export default function AdminDashboard() {
   const [initialized, setInitialized] = useState(false);
   const [initializing, setInitializing] = useState(false);
   const [newParticipant, setNewParticipant] = useState({
-    name: "",
+    member1Name: "",
+    member2Name: "",
+    member3Name: "",
+    member1Phone: "",
+    member1Email: "",
+    member1Year: "",
+    member1College: "",
+    member1Department: "",
+    member2Phone: "",
+    member2Email: "",
+    member2Year: "",
+    member2College: "",
+    member2Department: "",
+    member3Phone: "",
+    member3Email: "",
+    member3Year: "",
+    member3College: "",
+    member3Department: "",
     teamName: "",
     id: "",
     assignedRound: "round2" as 'round1' | 'round2',
-    phone: "",
-    email: "",
-    year: "",
-    college: "",
-    department: "",
   });
   const [createdParticipant, setCreatedParticipant] = useState<{ id: string; scenario: string } | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<string>("");
@@ -303,23 +334,50 @@ export default function AdminDashboard() {
   };
 
   const createParticipant = async () => {
-    if (!newParticipant.name || !newParticipant.teamName || !newParticipant.phone || !newParticipant.email) return;
+    if (
+      !newParticipant.member1Name ||
+      !newParticipant.teamName ||
+      !newParticipant.member1Phone ||
+      !newParticipant.member1Email ||
+      !newParticipant.member1College ||
+      !newParticipant.member1Department
+    ) {
+      return;
+    }
 
     try {
       const res = await fetch("/api/participants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: newParticipant.name,
+          name: newParticipant.member1Name,
+          member1Name: newParticipant.member1Name,
+          member2Name: newParticipant.member2Name || undefined,
+          member3Name: newParticipant.member3Name || undefined,
           teamName: newParticipant.teamName,
           id: newParticipant.id || undefined,
           assignedRound: newParticipant.assignedRound,
           autoAssignScenario: newParticipant.assignedRound === 'round2',
-          phone: newParticipant.phone,
-          email: newParticipant.email,
-          year: newParticipant.year || undefined,
-          college: newParticipant.college,
-          department: newParticipant.department,
+          phone: newParticipant.member1Phone,
+          email: newParticipant.member1Email,
+          year: newParticipant.member1Year || undefined,
+          college: newParticipant.member1College,
+          department: newParticipant.member1Department,
+          member1Phone: newParticipant.member1Phone,
+          member1Email: newParticipant.member1Email,
+          member1Year: newParticipant.member1Year || undefined,
+          member1College: newParticipant.member1College,
+          member1Department: newParticipant.member1Department,
+          member2Phone: newParticipant.member2Phone || undefined,
+          member2Email: newParticipant.member2Email || undefined,
+          member2Year: newParticipant.member2Year || undefined,
+          member2College: newParticipant.member2College || undefined,
+          member2Department: newParticipant.member2Department || undefined,
+          member3Phone: newParticipant.member3Phone || undefined,
+          member3Email: newParticipant.member3Email || undefined,
+          member3Year: newParticipant.member3Year || undefined,
+          member3College: newParticipant.member3College || undefined,
+          member3Department: newParticipant.member3Department || undefined,
         }),
       });
 
@@ -329,7 +387,29 @@ export default function AdminDashboard() {
           id: data.generatedId,
           scenario: newParticipant.assignedRound === 'round1' ? 'Round 1 - MCQ Quiz' : (data.participant.scenario_title || "No scenario available"),
         });
-        setNewParticipant({ name: "", teamName: "", id: "", assignedRound: "round2", phone: "", email: "", year: "", college: "", department: "" });
+        setNewParticipant({
+          member1Name: "",
+          member2Name: "",
+          member3Name: "",
+          member1Phone: "",
+          member1Email: "",
+          member1Year: "",
+          member1College: "",
+          member1Department: "",
+          member2Phone: "",
+          member2Email: "",
+          member2Year: "",
+          member2College: "",
+          member2Department: "",
+          member3Phone: "",
+          member3Email: "",
+          member3Year: "",
+          member3College: "",
+          member3Department: "",
+          teamName: "",
+          id: "",
+          assignedRound: "round2",
+        });
         refreshParticipants();
       }
     } catch (error) {
@@ -610,6 +690,9 @@ export default function AdminDashboard() {
     (sum, p) => sum + (p.round2_hint_count || 0),
     0
   );
+  const round2Participants = participants.filter(
+    (p) => p.assigned_round === "round2" || Boolean(p.scenario_id)
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -851,14 +934,249 @@ export default function AdminDashboard() {
                     <>
                       <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Participant Name *</label>
+                          <label className="text-sm font-medium">Member 1 Name (Team Lead) *</label>
                           <Input
-                            placeholder="Enter participant name"
-                            value={newParticipant.name}
+                            placeholder="Enter first member name"
+                            value={newParticipant.member1Name}
                             onChange={(e) =>
                               setNewParticipant((prev) => ({
                                 ...prev,
-                                name: e.target.value,
+                                member1Name: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Member 1 College *</label>
+                            <Input
+                              placeholder="Enter college name"
+                              value={newParticipant.member1College}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  member1College: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Member 1 Department *</label>
+                            <Input
+                              placeholder="Enter department"
+                              value={newParticipant.member1Department}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  member1Department: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Member 1 Phone *</label>
+                            <Input
+                              placeholder="e.g. 0123456789"
+                              value={newParticipant.member1Phone}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  member1Phone: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Member 1 Year (Optional)</label>
+                            <Input
+                              placeholder="e.g. Year 1"
+                              value={newParticipant.member1Year}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  member1Year: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Member 1 Email *</label>
+                          <Input
+                            placeholder="e.g. participant@email.com"
+                            value={newParticipant.member1Email}
+                            onChange={(e) =>
+                              setNewParticipant((prev) => ({
+                                ...prev,
+                                member1Email: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Member 2 Name (Optional)</label>
+                            <Input
+                              placeholder="Enter second member name"
+                              value={newParticipant.member2Name}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  member2Name: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Member 3 Name (Optional)</label>
+                            <Input
+                              placeholder="Enter third member name"
+                              value={newParticipant.member3Name}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  member3Name: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Member 2 College</label>
+                            <Input
+                              placeholder="Enter college name"
+                              value={newParticipant.member2College}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  member2College: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Member 2 Department</label>
+                            <Input
+                              placeholder="Enter department"
+                              value={newParticipant.member2Department}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  member2Department: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Member 2 Phone</label>
+                            <Input
+                              placeholder="e.g. 0123456789"
+                              value={newParticipant.member2Phone}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  member2Phone: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Member 2 Year (Optional)</label>
+                            <Input
+                              placeholder="e.g. Year 1"
+                              value={newParticipant.member2Year}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  member2Year: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Member 2 Email</label>
+                          <Input
+                            placeholder="e.g. participant@email.com"
+                            value={newParticipant.member2Email}
+                            onChange={(e) =>
+                              setNewParticipant((prev) => ({
+                                ...prev,
+                                member2Email: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Member 3 College</label>
+                            <Input
+                              placeholder="Enter college name"
+                              value={newParticipant.member3College}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  member3College: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Member 3 Department</label>
+                            <Input
+                              placeholder="Enter department"
+                              value={newParticipant.member3Department}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  member3Department: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Member 3 Phone</label>
+                            <Input
+                              placeholder="e.g. 0123456789"
+                              value={newParticipant.member3Phone}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  member3Phone: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Member 3 Year (Optional)</label>
+                            <Input
+                              placeholder="e.g. Year 1"
+                              value={newParticipant.member3Year}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  member3Year: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Member 3 Email</label>
+                          <Input
+                            placeholder="e.g. participant@email.com"
+                            value={newParticipant.member3Email}
+                            onChange={(e) =>
+                              setNewParticipant((prev) => ({
+                                ...prev,
+                                member3Email: e.target.value,
                               }))
                             }
                           />
@@ -872,75 +1190,6 @@ export default function AdminDashboard() {
                               setNewParticipant((prev) => ({
                                 ...prev,
                                 teamName: e.target.value,
-                              }))
-                            }
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">College *</label>
-                            <Input
-                              placeholder="Enter college name"
-                              value={newParticipant.college}
-                              onChange={(e) =>
-                                setNewParticipant((prev) => ({
-                                  ...prev,
-                                  college: e.target.value,
-                                }))
-                              }
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">Department *</label>
-                            <Input
-                              placeholder="Enter department"
-                              value={newParticipant.department}
-                              onChange={(e) =>
-                                setNewParticipant((prev) => ({
-                                  ...prev,
-                                  department: e.target.value,
-                                }))
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">Phone *</label>
-                            <Input
-                              placeholder="e.g. 0123456789"
-                              value={newParticipant.phone}
-                              onChange={(e) =>
-                                setNewParticipant((prev) => ({
-                                  ...prev,
-                                  phone: e.target.value,
-                                }))
-                              }
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">Year (Optional)</label>
-                            <Input
-                              placeholder="e.g. Year 1"
-                              value={newParticipant.year}
-                              onChange={(e) =>
-                                setNewParticipant((prev) => ({
-                                  ...prev,
-                                  year: e.target.value,
-                                }))
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Email *</label>
-                          <Input
-                            placeholder="e.g. participant@email.com"
-                            value={newParticipant.email}
-                            onChange={(e) =>
-                              setNewParticipant((prev) => ({
-                                ...prev,
-                                email: e.target.value,
                               }))
                             }
                           />
@@ -981,7 +1230,7 @@ export default function AdminDashboard() {
                         <Alert>
                           <Activity className="h-4 w-4" />
                           <AlertDescription>
-                            A random scenario will be automatically assigned when created.
+                            One login is created per team. Add up to 3 member names for joint participation.
                           </AlertDescription>
                         </Alert>
                       </div>
@@ -989,7 +1238,17 @@ export default function AdminDashboard() {
                         <Button variant="outline" onClick={() => setDialogOpen(false)}>
                           Cancel
                         </Button>
-                        <Button onClick={createParticipant} disabled={!newParticipant.name || !newParticipant.teamName || !newParticipant.phone || !newParticipant.email || !newParticipant.college || !newParticipant.department}>
+                        <Button
+                          onClick={createParticipant}
+                          disabled={
+                            !newParticipant.member1Name ||
+                            !newParticipant.teamName ||
+                            !newParticipant.member1Phone ||
+                            !newParticipant.member1Email ||
+                            !newParticipant.member1College ||
+                            !newParticipant.member1Department
+                          }
+                        >
                           Create Participant
                         </Button>
                       </DialogFooter>
@@ -1006,7 +1265,7 @@ export default function AdminDashboard() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead>Name</TableHead>
+                      <TableHead>Team Members</TableHead>
                       <TableHead>Team</TableHead>
                       <TableHead>College</TableHead>
                       <TableHead>Department</TableHead>
@@ -1039,25 +1298,49 @@ export default function AdminDashboard() {
                               {participant.id}
                             </TableCell>
                             <TableCell className="font-medium">
-                              {participant.name}
+                              <div className="space-y-1 text-sm">
+                                <div>{participant.name}</div>
+                                {participant.member2_name ? <div className="text-muted-foreground">{participant.member2_name}</div> : null}
+                                {participant.member3_name ? <div className="text-muted-foreground">{participant.member3_name}</div> : null}
+                              </div>
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
                               {participant.team_name || "-"}
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
-                              {participant.college || "-"}
+                              <div className="space-y-1">
+                                <div>{participant.member1_college || participant.college || "-"}</div>
+                                {participant.member2_name ? <div>{participant.member2_college || "-"}</div> : null}
+                                {participant.member3_name ? <div>{participant.member3_college || "-"}</div> : null}
+                              </div>
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
-                              {participant.department || "-"}
+                              <div className="space-y-1">
+                                <div>{participant.member1_department || participant.department || "-"}</div>
+                                {participant.member2_name ? <div>{participant.member2_department || "-"}</div> : null}
+                                {participant.member3_name ? <div>{participant.member3_department || "-"}</div> : null}
+                              </div>
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
-                              {participant.phone || "-"}
+                              <div className="space-y-1">
+                                <div>{participant.member1_phone || participant.phone || "-"}</div>
+                                {participant.member2_name ? <div>{participant.member2_phone || "-"}</div> : null}
+                                {participant.member3_name ? <div>{participant.member3_phone || "-"}</div> : null}
+                              </div>
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
-                              {participant.email || "-"}
+                              <div className="space-y-1 break-all">
+                                <div>{participant.member1_email || participant.email || "-"}</div>
+                                {participant.member2_name ? <div>{participant.member2_email || "-"}</div> : null}
+                                {participant.member3_name ? <div>{participant.member3_email || "-"}</div> : null}
+                              </div>
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
-                              {participant.year || "-"}
+                              <div className="space-y-1">
+                                <div>{participant.member1_year || participant.year || "-"}</div>
+                                {participant.member2_name ? <div>{participant.member2_year || "-"}</div> : null}
+                                {participant.member3_name ? <div>{participant.member3_year || "-"}</div> : null}
+                              </div>
                             </TableCell>
                             <TableCell>
                               {participant.scenario_title ? (
@@ -1206,7 +1489,7 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Round 2 Operations</CardTitle>
-                <CardDescription>Monitor scenario progress, timer status, component accesses, and violations.</CardDescription>
+                <CardDescription>Monitor scenario progress, timer status, component accesses, and team performance.</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
@@ -1214,6 +1497,74 @@ export default function AdminDashboard() {
                 </p>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Round 2 Students & Teams</CardTitle>
+                <CardDescription>Quick visibility of students, teams, scenario assignment, and score status.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Students</TableHead>
+                      <TableHead>Team</TableHead>
+                      <TableHead>College / Department</TableHead>
+                      <TableHead>Scenario</TableHead>
+                      <TableHead>Hint Packs</TableHead>
+                      <TableHead>Score</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {round2Participants.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground">
+                          No Round 2 participants yet.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      round2Participants.map((participant) => (
+                        <TableRow key={`r2-${participant.id}`}>
+                          <TableCell className="font-medium">
+                            <div className="space-y-1 text-sm">
+                              <div>{participant.name}</div>
+                              {participant.member2_name ? <div className="text-muted-foreground">{participant.member2_name}</div> : null}
+                              {participant.member3_name ? <div className="text-muted-foreground">{participant.member3_name}</div> : null}
+                            </div>
+                          </TableCell>
+                          <TableCell>{participant.team_name || "-"}</TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <div>{participant.college || "-"}</div>
+                              <div className="text-muted-foreground">{participant.department || "-"}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{participant.scenario_title || "Not assigned"}</TableCell>
+                          <TableCell>
+                            {participant.round2_hint_count || 0}
+                            <span className="text-muted-foreground"> ({participant.round2_hint_penalty || 0})</span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{participant.round2_score || 0}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {participant.is_locked ? (
+                              <Badge variant="destructive">Locked</Badge>
+                            ) : participant.timer_started_at ? (
+                              <Badge variant="default">Active</Badge>
+                            ) : (
+                              <Badge variant="outline">Ready</Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
             <ComponentsView />
           </TabsContent>
 
