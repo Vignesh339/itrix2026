@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         generated.forEach((q) => createRound1Question(q));
       }
 
-      const session = startOrGetRound1Session(participantId, 56);
+      const session = startOrGetRound1Session(participantId, 66);
       const assignedQuestions = getRound1AssignedQuestions(participantId);
       const responses = getRound1Responses(participantId);
       const unlockedSection = getRound1UnlockedSection(participantId);

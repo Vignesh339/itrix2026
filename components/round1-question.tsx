@@ -132,14 +132,14 @@ export function Round1Question({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between rounded-xl border border-cyan-200/25 bg-slate-950/55 px-3 py-2">
-        <p className="text-sm font-medium text-cyan-100/90">Question {questionNumber} of {totalQuestions}</p>
+      <div className="flex items-center justify-between rounded-xl border border-cyan-200/20 bg-slate-950/45 px-3 py-2">
+        <p className="text-sm font-medium text-cyan-100/80">Question {questionNumber} of {totalQuestions}</p>
         <Badge variant="outline" className="border-cyan-200/30 bg-cyan-300/10 text-cyan-100">
           {question.score} pts
         </Badge>
       </div>
 
-      <Card className="border-cyan-200/25 bg-slate-950/70 shadow-[0_0_0_1px_rgba(34,211,238,0.07)] backdrop-blur-lg">
+      <Card className="border-cyan-200/20 bg-slate-950/60 backdrop-blur-lg">
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
@@ -189,19 +189,16 @@ export function Round1Question({
               }}
             >
               <div className="space-y-3">
-                {question.options?.map((option, idx) => (
+                {question.options?.map((option) => (
                   <div
                     key={option.id}
                     className={`flex items-center space-x-2 rounded-lg border p-3 transition-colors ${
                       selectedAnswer === option.id
-                        ? "border-cyan-300/60 bg-cyan-300/15"
+                        ? "border-cyan-300/50 bg-cyan-300/10"
                         : "border-white/15 bg-slate-900/35 hover:bg-slate-900/60"
                     } ${readOnly ? "cursor-not-allowed" : "cursor-pointer"}`}
                   >
                     <RadioGroupItem value={option.id} id={option.id} disabled={readOnly} />
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full border border-cyan-300/40 bg-cyan-400/10 text-xs font-semibold text-cyan-100">
-                      {String.fromCharCode(65 + idx)}
-                    </span>
                     <Label htmlFor={option.id} className="flex-1 cursor-pointer text-cyan-50">
                       {option.text}
                     </Label>
@@ -213,12 +210,12 @@ export function Round1Question({
 
           {question.type === "multi-select" && (
             <div className="space-y-3">
-              {question.options?.map((option, idx) => (
+              {question.options?.map((option) => (
                 <div
                   key={option.id}
                   className={`flex items-center space-x-2 rounded-lg border p-3 transition-colors ${
                     selectedAnswers.includes(option.id)
-                      ? "border-cyan-300/60 bg-cyan-300/15"
+                      ? "border-cyan-300/50 bg-cyan-300/10"
                       : "border-white/15 bg-slate-900/35 hover:bg-slate-900/60"
                   }`}
                 >
@@ -239,9 +236,6 @@ export function Round1Question({
                       }
                     }}
                   />
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full border border-cyan-300/40 bg-cyan-400/10 text-xs font-semibold text-cyan-100">
-                    {String.fromCharCode(65 + idx)}
-                  </span>
                   <Label htmlFor={option.id} className="flex-1 cursor-pointer text-cyan-50">
                     {option.text}
                   </Label>
@@ -250,25 +244,23 @@ export function Round1Question({
             </div>
           )}
 
-          {isMatchingType(question.type) && (
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium">Match Items</h4>
-              <DragDropMatching
-                pairs={question.matchingPairs || []}
-                currentAnswer={typeof currentAnswer === "string" ? currentAnswer : undefined}
-                readOnly={readOnly}
-                questionId={question.id}
-                onAnswerChange={(answer) => {
-                  try {
-                    const parsed = JSON.parse(answer);
-                    setMatchingAnswers(parsed && typeof parsed === "object" ? parsed : {});
-                  } catch {
-                    setMatchingAnswers({});
-                  }
-                  onAnswerChange(answer);
-                }}
-              />
-            </div>
+          {isMatchingType(question.type) && question.matchingPairs && (
+            <DragDropMatching
+              pairs={question.matchingPairs}
+              currentAnswer={typeof currentAnswer === "string" ? currentAnswer : undefined}
+              onAnswerChange={(answer) => {
+                if (readOnly) return;
+                try {
+                  const parsed = JSON.parse(answer);
+                  setMatchingAnswers(parsed && typeof parsed === "object" ? parsed : {});
+                } catch {
+                  setMatchingAnswers({});
+                }
+                onAnswerChange(answer);
+              }}
+              readOnly={readOnly}
+              questionId={question.id}
+            />
           )}
 
           {question.type === "connection-evaluation" && (
@@ -410,8 +402,8 @@ export function Round1Question({
             <span>
               {isMatchingType(question.type)
                 ? matchingCompleted
-                  ? "All matches selected"
-                  : "Select all matches to complete this question"
+                  ? "All answers matched"
+                  : "Drag answers from the pool into the matching slots"
                 : question.type === "connection-evaluation"
                   ? "Connect sensor pins to Arduino pins just like a wiring lab."
                   : question.type === "snippet-coding"

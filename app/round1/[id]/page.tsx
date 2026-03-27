@@ -120,10 +120,6 @@ function getScenarioGroupTitle(questionTitle: string): string {
   return questionTitle.replace(/\s-\sQ\d+$/i, "").trim();
 }
 
-function getCircuitGroupTitle(questionTitle: string): string {
-  return questionTitle.replace(/\s-\sQ\d+$/i, "").trim();
-}
-
 export default function Round1QuizPage() {
   const params = useParams<{ id: string }>();
   const pathname = usePathname();
@@ -409,25 +405,20 @@ export default function Round1QuizPage() {
     return Array.from(groups.entries()).map(([groupId, group]) => ({ groupId, ...group }));
   }, [activeQuestions]);
 
-  const groupedCircuitQuestionsForDisplay = useMemo(() => {
+  const connectionQuestionsForDisplay = useMemo(() => {
     let runningIndex = 0;
-    return groupedCircuitQuestions.map((group, groupIndex) => {
-      const circuitTitle = getCircuitGroupTitle(group.questions[0]?.title || `Circuit ${groupIndex + 1}`);
-      return {
-        ...group,
-        circuitTitle,
-        questions: group.questions.map((question) => {
-          runningIndex += 1;
-          return {
-            question: {
-              ...question,
-              imageUrl: undefined,
-            },
-            questionNumber: runningIndex,
-          };
-        }),
-      };
-    });
+    return groupedCircuitQuestions.flatMap((group) =>
+      group.questions.map((question, index) => {
+        runningIndex += 1;
+        return {
+          question: {
+            ...question,
+            imageUrl: index === 0 ? group.imageUrl : undefined,
+          },
+          questionNumber: runningIndex,
+        };
+      })
+    );
   }, [groupedCircuitQuestions]);
 
   const activeSegmentStats = segmentCompletion[activeSegment];
@@ -501,19 +492,18 @@ export default function Round1QuizPage() {
 
   return (
     <main className="relative min-h-screen bg-background p-4">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.12),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(14,116,144,0.22),transparent_50%)]" />
       <div className="iot-grid-overlay" />
       {participantId && <Round1Proctoring participantId={participantId} enabled={true} enforceFullscreen={enforceFullscreen} />}
 
       <div className="relative mx-auto max-w-7xl space-y-6 py-6">
-        <Card className="border-cyan-200/25 bg-gradient-to-r from-slate-950/85 via-slate-950/75 to-cyan-950/30 shadow-[0_0_0_1px_rgba(34,211,238,0.08)] backdrop-blur-lg">
+        <Card className="border-cyan-200/20 bg-slate-950/65 backdrop-blur-lg">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4 md:p-5">
             <div>
               <h1 className="flex items-center gap-2 text-2xl font-semibold text-cyan-50">
                 <Brain className="h-6 w-6 text-cyan-200" />
-                Round 1 Assessment Console
+                Round 1 - Segmented Test
               </h1>
-              <p className="mt-1 text-sm text-cyan-100/70">Work section by section. Answers auto-save instantly and locked segments cannot be edited.</p>
+              <p className="mt-1 text-sm text-cyan-100/70">Secure assessment interface with section locking and automatic answer persistence.</p>
             </div>
             <div className="flex items-center gap-3">
               <Badge variant="outline" className="gap-1 border-cyan-200/30 bg-cyan-400/10 px-3 py-1 text-cyan-100">
@@ -527,11 +517,11 @@ export default function Round1QuizPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-cyan-200/20 bg-slate-950/65">
+        <Card className="border-cyan-200/20 bg-slate-950/55">
           <CardContent className="space-y-3 p-4">
             <div className="flex items-center justify-between text-sm">
               <span className="inline-flex items-center gap-1.5 text-cyan-100/80"><Layers3 className="h-4 w-4" /> Current Segment Progress</span>
-              <span className="font-medium text-cyan-50">{activeSegmentStats.answered}/{activeSegmentStats.total} answered ({Math.round(activeProgress)}%)</span>
+              <span className="font-medium text-cyan-50">{activeSegmentStats.answered}/{activeSegmentStats.total} answered</span>
             </div>
             <Progress value={activeProgress} className="h-2" />
           </CardContent>
@@ -539,7 +529,7 @@ export default function Round1QuizPage() {
 
         <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside className="space-y-4 lg:sticky lg:top-4 lg:h-fit">
-            <Card className="border-cyan-200/20 bg-slate-950/70">
+            <Card className="border-cyan-200/20 bg-slate-950/60">
               <CardHeader>
                 <CardTitle className="text-base text-cyan-50">Segments</CardTitle>
               </CardHeader>
@@ -548,36 +538,30 @@ export default function Round1QuizPage() {
                   const stats = segmentCompletion[segment.id];
                   const isActive = activeSegment === segment.id;
                   const isCommitted = committedSegments[segment.id];
-                  const segmentIdx = SEGMENT_INDEX[segment.id];
-                  const isBlocked = segmentIdx !== unlockedSection;
                   return (
                     <button
                       key={segment.id}
                       type="button"
-                      className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${isActive ? "border-cyan-300/50 bg-cyan-300/15 shadow-[0_0_0_1px_rgba(34,211,238,0.12)]" : "border-white/15 bg-slate-900/45 hover:bg-slate-900/70"} ${isBlocked ? "cursor-not-allowed opacity-50" : ""}`}
-                      onClick={() => {
-                        if (!isBlocked) setActiveSegment(segment.id);
-                      }}
-                      disabled={isBlocked}
+                      className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${isActive ? "border-cyan-300/50 bg-cyan-300/10" : "border-white/15 bg-slate-900/45 hover:bg-slate-900/70"}`}
+                      onClick={() => setActiveSegment(segment.id)}
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-cyan-50">{segment.title}</span>
                         {isCommitted ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : null}
                       </div>
                       <p className="mt-1 text-xs text-cyan-100/70">{stats.answered}/{stats.total} answered</p>
-                      <p className="mt-0.5 line-clamp-1 text-[11px] text-cyan-100/55">{segment.subtitle}</p>
                     </button>
                   );
                 })}
               </CardContent>
             </Card>
 
-            <Card className="border-cyan-200/20 bg-slate-950/70">
+            <Card className="border-cyan-200/20 bg-slate-950/60">
               <CardHeader>
                 <CardTitle className="text-base text-cyan-50">Questions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className="grid grid-cols-5 gap-2 sm:grid-cols-6 lg:grid-cols-5">
+                <div className="grid grid-cols-5 gap-2">
                   {activeQuestions.map((question, index) => {
                     const answered = isAnswered(answersByQuestionId[question.id]);
                     return (
@@ -598,7 +582,7 @@ export default function Round1QuizPage() {
           </aside>
 
           <section className="space-y-4">
-            <Card className="border-cyan-200/20 bg-slate-950/70">
+            <Card className="border-cyan-200/20 bg-slate-950/60">
               <CardHeader>
                 <CardTitle className="text-lg text-cyan-50">{SEGMENTS.find((s) => s.id === activeSegment)?.title}</CardTitle>
               </CardHeader>
@@ -627,42 +611,18 @@ export default function Round1QuizPage() {
               </div>
             ))}
 
-            {activeSegment === "connection" && groupedCircuitQuestionsForDisplay.map((group, groupIndex) => (
-              <div key={group.groupId} className="space-y-4">
-                <Card className="border-cyan-200/20 bg-slate-950/65">
-                  <CardHeader>
-                    <CardTitle className="text-base text-cyan-50">Circuit Set {groupIndex + 1}: {group.circuitTitle}</CardTitle>
-                    <p className="text-sm text-cyan-100/75">
-                      Observe the circuit carefully before answering the questions below.
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    {group.imageUrl ? (
-                      <div className="overflow-hidden rounded-xl border border-cyan-200/20 bg-slate-900/55 p-3">
-                        <img
-                          src={group.imageUrl}
-                          alt={`${group.circuitTitle} circuit`}
-                          className="max-h-[360px] w-full rounded-md object-contain"
-                        />
-                      </div>
-                    ) : null}
-                  </CardContent>
-                </Card>
-
-                {group.questions.map(({ question, questionNumber }) => (
-                  <div key={question.id} id={`question-${question.id}`}>
-                    <Round1Question
-                      question={question}
-                      questionNumber={questionNumber}
-                      totalQuestions={activeQuestions.length}
-                      currentAnswer={answersByQuestionId[question.id]}
-                      onAnswerChange={(answer) => handleAnswerChange(question, answer)}
-                      isSaving={isSavingAnswer}
-                      readOnly={committedSegments[activeSegment]}
-                      showNavigation={false}
-                    />
-                  </div>
-                ))}
+            {activeSegment === "connection" && connectionQuestionsForDisplay.map(({ question, questionNumber }) => (
+              <div key={question.id} id={`question-${question.id}`}>
+                <Round1Question
+                  question={question}
+                  questionNumber={questionNumber}
+                  totalQuestions={activeQuestions.length}
+                  currentAnswer={answersByQuestionId[question.id]}
+                  onAnswerChange={(answer) => handleAnswerChange(question, answer)}
+                  isSaving={isSavingAnswer}
+                  readOnly={committedSegments[activeSegment]}
+                  showNavigation={false}
+                />
               </div>
             ))}
 
@@ -747,8 +707,8 @@ export default function Round1QuizPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Move To Next Section?</AlertDialogTitle>
             <AlertDialogDescription>
-              Once you move to {nextSegment === "scenario" ? "Scenario" : nextSegment === "connection" ? "Connecting Elements" : "Basic Snippet Coding"}, you cannot return to this section.
-              Unanswered questions will remain unanswered.
+              This will lock your current section answers. You can still switch to any section from the sidebar.
+              Unanswered questions in the locked section will remain unanswered.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

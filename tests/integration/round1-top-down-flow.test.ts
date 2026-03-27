@@ -30,7 +30,7 @@ describe('round1 top-down integration flow', () => {
     };
 
     expect(startRes.status).toBe(200);
-    expect(startBody.questions).toHaveLength(56);
+    expect(startBody.questions).toHaveLength(66);
 
     const firstMcq = startBody.questions.find((q) => q.type === 'mcq');
     expect(firstMcq).toBeDefined();
@@ -51,6 +51,6 @@ describe('round1 top-down integration flow', () => {
 
     expect(submitRes.status).toBe(200);
     expect(submitBody.result.participant_id).toBe('top-down-1');
-    expect(submitBody.result.total_questions).toBe(56);
+    expect(submitBody.result.total_questions).toBe(66);
   });
 });

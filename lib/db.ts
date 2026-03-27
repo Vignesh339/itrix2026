@@ -984,11 +984,16 @@ export function startOrGetRound1Session(participantId: string, perParticipantQue
   const store = getStore();
   const existing = store.round1Sessions.get(participantId);
   if (existing) {
-    const assignedValidCount = existing.question_ids.filter((id) => store.round1Questions.has(id)).length;
+    const assignedQuestions = existing.question_ids
+      .map((id) => store.round1Questions.get(id))
+      .filter(Boolean) as Round1Question[];
+    const assignedValidCount = assignedQuestions.length;
+    const hasSectionDQuestions = assignedQuestions.some((q) => q.section === 'D');
     const isUsableSession =
       !existing.submitted &&
       existing.question_ids.length > 0 &&
-      assignedValidCount === existing.question_ids.length;
+      assignedValidCount === existing.question_ids.length &&
+      hasSectionDQuestions;
 
     if (isUsableSession) {
       if (!store.round1SectionAccess.has(participantId)) {
@@ -1081,7 +1086,7 @@ export function startOrGetRound1Session(participantId: string, perParticipantQue
 
   if (questions.length === 0) {
     const fallbackCount = Math.min(
-      perParticipantQuestionCount > 0 ? perParticipantQuestionCount : 56,
+      perParticipantQuestionCount > 0 ? perParticipantQuestionCount : 66,
       all.length
     );
     const fallback = shuffled(all).slice(0, fallbackCount);
@@ -1104,7 +1109,7 @@ export function startOrGetRound1Session(participantId: string, perParticipantQue
   }
 
   const requestedCount = Math.min(
-    perParticipantQuestionCount > 0 ? perParticipantQuestionCount : 56,
+    perParticipantQuestionCount > 0 ? perParticipantQuestionCount : 66,
     questions.length
   );
   const finalQuestions = questions.slice(0, requestedCount);

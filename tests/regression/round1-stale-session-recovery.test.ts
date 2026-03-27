@@ -51,7 +51,8 @@ describe('round1 stale session recovery', () => {
     const body = (await res.json()) as { questions: Array<{ type: string }> };
 
     expect(res.status).toBe(200);
-    expect(body.questions).toHaveLength(56);
+    expect(body.questions).toHaveLength(66);
     expect(body.questions.some((q) => q.type === 'simulation')).toBe(true);
+    expect(body.questions.some((q) => q.type === 'matching' || q.type === 'component-matching')).toBe(true);
   });
 });

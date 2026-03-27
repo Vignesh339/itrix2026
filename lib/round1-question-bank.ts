@@ -58,6 +58,7 @@ interface BuiltQuestion {
   score: number;
   timeLimit: number;
   options?: Array<{ id: string; text: string }>;
+  matchingPairs?: Array<{ id: string; left: string; right: string }>;
   correctAnswer?: string | string[];
   scenario_group?: string;
   codeSnippet?: string;
@@ -545,9 +546,10 @@ function toScenarioQuestions(scenarioSeed: ScenarioSeed): BuiltQuestion[] {
 }
 
 function toCircuitQuestions(seed: CircuitQuestionSeed): BuiltQuestion[] {
+  const circuitName = seed.title.replace(/^Circuit \d+\s*[—–-]+\s*/i, '');
   return seed.questions.map((q, index) => ({
     type: 'simulation',
-    title: `${seed.title} - Q${index + 1}`,
+    title: `${circuitName} - Q${index + 1}`,
     scenario: q.stem,
     section: 'C',
     difficulty: q.difficulty,
