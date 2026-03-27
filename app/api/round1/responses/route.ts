@@ -69,12 +69,13 @@ export async function GET(request: NextRequest) {
 
     if (action === 'review') {
       const review = getRound1ResponseReview(participantId);
-      const right = review.filter((item) => item.is_correct).length;
-      const wrong = review.length - right;
+      const attendedItems = review.filter((item) => item.answer !== undefined && item.answer !== null && (Array.isArray(item.answer) ? item.answer.length > 0 : String(item.answer).trim().length > 0));
+      const right = attendedItems.filter((item) => item.is_correct).length;
+      const wrong = attendedItems.length - right;
       return NextResponse.json({
         review,
         summary: {
-          attended: review.length,
+          attended: attendedItems.length,
           right,
           wrong,
         },

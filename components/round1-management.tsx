@@ -60,7 +60,7 @@ interface Round1ReviewItem {
   title: string;
   scenario: string;
   section: "A" | "B" | "C" | "D";
-  answer: string | string[];
+  answer?: string | string[];
   correct_answer?: string | string[];
   is_correct: boolean;
   score_obtained: number;
@@ -125,6 +125,8 @@ export function Round1Management() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewParticipantId, setReviewParticipantId] = useState<string | null>(null);
+  const [reviewParticipantName, setReviewParticipantName] = useState<string | null>(null);
+  const [reviewParticipantTeam, setReviewParticipantTeam] = useState<string | null>(null);
   const [reviewData, setReviewData] = useState<Round1ReviewPayload | null>(null);
   const [promoteThreshold, setPromoteThreshold] = useState("60");
   const [promoting, setPromoting] = useState(false);
@@ -168,7 +170,10 @@ export function Round1Management() {
   };
 
   const loadRound1Review = async (participantId: string) => {
+    const participant = (participantsData?.participants || []).find((p: ParticipantData) => p.id === participantId);
     setReviewParticipantId(participantId);
+    setReviewParticipantName(participant?.name || null);
+    setReviewParticipantTeam(participant?.team_name || null);
     setReviewData(null);
     setReviewOpen(true);
     setReviewLoading(true);
@@ -267,7 +272,7 @@ export function Round1Management() {
           <DialogHeader>
             <DialogTitle className="text-xl">Round 1 Answer Review</DialogTitle>
             <DialogDescription className="text-cyan-100/75">
-              Participant: {reviewParticipantId || "-"}
+              Participant: {reviewParticipantName || "-"} ({reviewParticipantId || "-"}){reviewParticipantTeam ? ` | Team: ${reviewParticipantTeam}` : ""}
             </DialogDescription>
           </DialogHeader>
 
@@ -652,15 +657,15 @@ export function Round1Management() {
                             <SelectItem value="round2">Round 2</SelectItem>
                           </SelectContent>
                         </Select>
-                        {participant.assigned_round === "round1" ? (
+                        {(participant.round1_total_questions || 0) > 0 || (participant.round1_answered || 0) > 0 || !!participant.round1_completed ? (
                           <button
                             type="button"
                             onClick={() => loadRound1Review(participant.id)}
                             className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs hover:bg-muted"
-                            title="Review attended questions"
+                            title="Review Round 1 questions and answers"
                           >
                             <ListChecks className="h-3.5 w-3.5" />
-                            Review
+                            Q&A Review
                           </button>
                         ) : null}
                       </div>

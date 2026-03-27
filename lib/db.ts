@@ -172,11 +172,11 @@ export interface Round1ResponseReviewItem {
   type: QuestionType;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   score: number;
-  answer: string | string[];
+  answer?: string | string[];
   correct_answer?: string | string[];
   is_correct: boolean;
   score_obtained: number;
-  answered_at: string;
+  answered_at?: string;
 }
 
 export interface Round1Result {
@@ -1356,17 +1356,23 @@ export function getRound1Responses(participantId: string): Round1Response[] {
 
 export function getRound1ResponseReview(participantId: string): Round1ResponseReviewItem[] {
   const store = getStore();
-  const responses = store.round1Responses
-    .filter((r) => r.participant_id === participantId)
-    .sort((a, b) => new Date(a.answered_at).getTime() - new Date(b.answered_at).getTime());
+  const session = store.round1Sessions.get(participantId);
+  const responses = store.round1Responses.filter((r) => r.participant_id === participantId);
+  const responseMap = new Map<number, Round1Response>();
+  responses.forEach((response) => {
+    responseMap.set(response.question_id, response);
+  });
 
-  return responses
-    .map((response) => {
-      const question = store.round1Questions.get(response.question_id);
+  const assignedQuestionIds = session?.question_ids || Array.from(responseMap.keys());
+
+  return assignedQuestionIds
+    .map((questionId) => {
+      const question = store.round1Questions.get(questionId);
       if (!question) {
         return null;
       }
 
+      const response = responseMap.get(questionId);
       return {
         question_id: question.id,
         title: question.title,
@@ -1375,11 +1381,11 @@ export function getRound1ResponseReview(participantId: string): Round1ResponseRe
         type: question.type,
         difficulty: question.difficulty,
         score: question.score,
-        answer: response.answer,
+        answer: response?.answer,
         correct_answer: question.correctAnswer,
-        is_correct: response.is_correct,
-        score_obtained: response.score_obtained,
-        answered_at: response.answered_at,
+        is_correct: response?.is_correct || false,
+        score_obtained: response?.score_obtained || 0,
+        answered_at: response?.answered_at,
       };
     })
     .filter((item): item is Round1ResponseReviewItem => item !== null);
