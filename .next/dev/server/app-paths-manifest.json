@@ -1,4 +1,15 @@
 {
+  "/admin/page": "app/admin/page.js",
+  "/api/admin/export/route": "app/api/admin/export/route.js",
+  "/api/admin/leaderboard/route": "app/api/admin/leaderboard/route.js",
+  "/api/admin/timer/route": "app/api/admin/timer/route.js",
+  "/api/admin/verify/route": "app/api/admin/verify/route.js",
+  "/api/init/route": "app/api/init/route.js",
   "/api/leaderboard/route": "app/api/leaderboard/route.js",
+  "/api/logs/route": "app/api/logs/route.js",
+  "/api/participants/[id]/route": "app/api/participants/[id]/route.js",
+  "/api/participants/route": "app/api/participants/route.js",
+  "/api/round1/questions/route": "app/api/round1/questions/route.js",
+  "/api/scenarios/route": "app/api/scenarios/route.js",
   "/page": "app/page.js"
 }

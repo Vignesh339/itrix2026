@@ -130,6 +130,36 @@
         "round2_completed": false,
         "round1_completed_at": "2026-03-27T19:20:56.396Z"
       }
+    ],
+    [
+      "TESTXX",
+      {
+        "id": "TESTXX",
+        "name": "Test Admin",
+        "member1_name": "Test Admin",
+        "member1_phone": "9999999999",
+        "member1_email": "test@test.com",
+        "member1_college": "Test College",
+        "member1_department": "CSE",
+        "member1_year": "3",
+        "team_name": "Test Team",
+        "college": "Test College",
+        "department": "CSE",
+        "phone": "9999999999",
+        "email": "test@test.com",
+        "year": "3",
+        "assigned_round": "round1",
+        "scenario_id": null,
+        "timer_duration": 7200,
+        "timer_started_at": null,
+        "is_active": 0,
+        "is_locked": 0,
+        "created_at": "2026-03-27T20:43:44.784Z",
+        "round1_score": 0,
+        "round1_completed": false,
+        "round2_score": 0,
+        "round2_completed": false
+      }
     ]
   ],
   "scenarios": [
@@ -956,6 +986,62 @@
   "snippetUnlocks": [],
   "activityLogs": [
     {
+      "id": 37,
+      "participant_id": "JF6DJM",
+      "event_type": "violation",
+      "details": "tab_switch: Participant switched to another browser tab during Round 1.",
+      "created_at": "2026-03-27T19:34:45.716Z"
+    },
+    {
+      "id": 36,
+      "participant_id": "JF6DJM",
+      "event_type": "round1_response",
+      "details": "Question 61: Correct (4/4 points)",
+      "created_at": "2026-03-27T19:34:37.575Z"
+    },
+    {
+      "id": 35,
+      "participant_id": "JF6DJM",
+      "event_type": "round1_response",
+      "details": "Question 62: Incorrect (6/8 points)",
+      "created_at": "2026-03-27T19:34:28.598Z"
+    },
+    {
+      "id": 34,
+      "participant_id": "JF6DJM",
+      "event_type": "round1_response",
+      "details": "Question 61: Correct (4/4 points)",
+      "created_at": "2026-03-27T19:34:20.876Z"
+    },
+    {
+      "id": 33,
+      "participant_id": "JF6DJM",
+      "event_type": "round1_started",
+      "details": "Round 1 started with 66 questions",
+      "created_at": "2026-03-27T19:34:09.652Z"
+    },
+    {
+      "id": 32,
+      "participant_id": "JF6DJM",
+      "event_type": "locked",
+      "details": "Dashboard locked - time expired",
+      "created_at": "2026-03-27T19:20:56.754Z"
+    },
+    {
+      "id": 31,
+      "participant_id": "JF6DJM",
+      "event_type": "round1_completed",
+      "details": "Round 1 completed with score: 0",
+      "created_at": "2026-03-27T19:20:56.396Z"
+    },
+    {
+      "id": 30,
+      "participant_id": "JF6DJM",
+      "event_type": "round1_started",
+      "details": "Round 1 started with 66 questions",
+      "created_at": "2026-03-27T19:20:14.948Z"
+    },
+    {
       "id": 29,
       "participant_id": "6EUSXP",
       "event_type": "violation",
@@ -1159,63 +1245,37 @@
       "created_at": "2026-03-27T15:22:24.330Z"
     },
     {
-      "id": 30,
-      "participant_id": "JF6DJM",
-      "event_type": "round1_started",
-      "details": "Round 1 started with 66 questions",
-      "created_at": "2026-03-27T19:20:14.948Z"
+      "id": 38,
+      "participant_id": "TESTXX",
+      "event_type": "participant_created",
+      "details": "New participant created: Test Admin (round1)",
+      "created_at": "2026-03-27T20:43:44.787Z"
     },
     {
-      "id": 31,
-      "participant_id": "JF6DJM",
-      "event_type": "round1_completed",
-      "details": "Round 1 completed with score: 0",
-      "created_at": "2026-03-27T19:20:56.396Z"
-    },
-    {
-      "id": 32,
-      "participant_id": "JF6DJM",
+      "id": 39,
+      "participant_id": "TST001",
       "event_type": "locked",
       "details": "Dashboard locked - time expired",
-      "created_at": "2026-03-27T19:20:56.754Z"
+      "created_at": "2026-03-27T20:43:46.986Z"
     },
     {
-      "id": 33,
-      "participant_id": "JF6DJM",
-      "event_type": "round1_started",
-      "details": "Round 1 started with 66 questions",
-      "created_at": "2026-03-27T19:34:09.652Z"
-    },
-    {
-      "id": 34,
-      "participant_id": "JF6DJM",
-      "event_type": "round1_response",
-      "details": "Question 61: Correct (4/4 points)",
-      "created_at": "2026-03-27T19:34:20.876Z"
-    },
-    {
-      "id": 35,
-      "participant_id": "JF6DJM",
-      "event_type": "round1_response",
-      "details": "Question 62: Incorrect (6/8 points)",
-      "created_at": "2026-03-27T19:34:28.598Z"
-    },
-    {
-      "id": 36,
-      "participant_id": "JF6DJM",
-      "event_type": "round1_response",
-      "details": "Question 61: Correct (4/4 points)",
-      "created_at": "2026-03-27T19:34:37.575Z"
-    },
-    {
-      "id": 37,
-      "participant_id": "JF6DJM",
-      "event_type": "violation",
-      "details": "tab_switch: Participant switched to another browser tab during Round 1.",
-      "created_at": "2026-03-27T19:34:45.716Z"
+      "id": 40,
+      "participant_id": "TST001",
+      "event_type": "unlocked",
+      "details": "Dashboard unlocked by admin",
+      "created_at": "2026-03-27T20:43:47.096Z"
     }
   ],
   "violations": [
+    {
+      "id": 16,
+      "participant_id": "JF6DJM",
+      "violation_type": "tab_switch",
+      "severity": "critical",
+      "details": "Participant switched to another browser tab during Round 1.",
+      "is_approved": false,
+      "created_at": "2026-03-27T19:34:45.716Z"
+    },
     {
       "id": 15,
       "participant_id": "6EUSXP",
@@ -1350,15 +1410,6 @@
       "details": "Participant switched away from the quiz window. Only this quiz site is permitted during Round 1 — no external applications are allowed.",
       "is_approved": false,
       "created_at": "2026-03-27T15:24:38.939Z"
-    },
-    {
-      "id": 16,
-      "participant_id": "JF6DJM",
-      "violation_type": "tab_switch",
-      "severity": "critical",
-      "details": "Participant switched to another browser tab during Round 1.",
-      "is_approved": false,
-      "created_at": "2026-03-27T19:34:45.716Z"
     }
   ],
   "initialized": true,
