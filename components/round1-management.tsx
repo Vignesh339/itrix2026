@@ -6,6 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -21,7 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Spinner } from "@/components/ui/spinner";
-import { UserCheck, Users, BarChart3, CheckCircle, Clock, Trophy } from "lucide-react";
+import { UserCheck, Users, BarChart3, CheckCircle, Clock, Trophy, ListChecks } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -45,6 +52,41 @@ interface TeamEntry {
   avg_score: number;
   all_completed: boolean;
   any_completed: boolean;
+}
+
+interface Round1ReviewItem {
+  question_id: number;
+  title: string;
+  scenario: string;
+  section: "A" | "B" | "C" | "D";
+  answer: string | string[];
+  correct_answer?: string | string[];
+  is_correct: boolean;
+  score_obtained: number;
+  score: number;
+}
+
+interface Round1ReviewPayload {
+  review: Round1ReviewItem[];
+  summary: {
+    attended: number;
+    right: number;
+    wrong: number;
+  };
+}
+
+function formatAnswer(value: string | string[] | undefined): string {
+  if (value === undefined) return "-";
+  if (Array.isArray(value)) return value.join(", ");
+  if (!value) return "-";
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) return parsed.join(", ");
+    if (typeof parsed === "object") return JSON.stringify(parsed);
+  } catch {
+    // keep plain string
+  }
+  return value;
 }
 
 function buildTeamLeaderboard(participants: ParticipantData[]): TeamEntry[] {
@@ -79,6 +121,10 @@ function buildTeamLeaderboard(participants: ParticipantData[]): TeamEntry[] {
 export function Round1Management() {
   const [filterRound, setFilterRound] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewParticipantId, setReviewParticipantId] = useState<string | null>(null);
+  const [reviewData, setReviewData] = useState<Round1ReviewPayload | null>(null);
 
   const { data: participantsData, mutate: refreshParticipants } = useSWR(
     "/api/participants",
@@ -115,6 +161,26 @@ export function Round1Management() {
       if (res.ok) refreshParticipants();
     } catch (error) {
       console.error("Failed to override Round 1 section:", error);
+    }
+  };
+
+  const loadRound1Review = async (participantId: string) => {
+    setReviewParticipantId(participantId);
+    setReviewData(null);
+    setReviewOpen(true);
+    setReviewLoading(true);
+    try {
+      const res = await fetch(`/api/round1/responses?participantId=${participantId}&action=review`);
+      if (!res.ok) {
+        throw new Error("Failed to load review");
+      }
+      const data = await res.json();
+      setReviewData(data as Round1ReviewPayload);
+    } catch (error) {
+      console.error(error);
+      setReviewData({ review: [], summary: { attended: 0, right: 0, wrong: 0 } });
+    } finally {
+      setReviewLoading(false);
     }
   };
 
@@ -164,6 +230,101 @@ export function Round1Management() {
 
   return (
     <div className="space-y-6">
+      <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
+        <DialogContent className="max-h-[90vh] w-[96vw] max-w-[96vw] sm:!max-w-[96vw] lg:!max-w-6xl overflow-hidden border-cyan-200/25 bg-slate-950/95 text-cyan-50">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Round 1 Answer Review</DialogTitle>
+            <DialogDescription className="text-cyan-100/75">
+              Participant: {reviewParticipantId || "-"}
+            </DialogDescription>
+          </DialogHeader>
+
+          {reviewLoading ? (
+            <div className="flex justify-center py-8">
+              <Spinner className="h-6 w-6" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-3">
+                <Card className="min-w-[180px] flex-1 basis-[220px] border-cyan-200/20 bg-slate-900/75">
+                  <CardContent className="p-4">
+                    <p className="text-xs uppercase tracking-wide text-cyan-100/70">Attended</p>
+                    <p className="text-2xl font-semibold">{reviewData?.summary.attended || 0}</p>
+                  </CardContent>
+                </Card>
+                <Card className="min-w-[180px] flex-1 basis-[220px] border-emerald-300/25 bg-emerald-500/10">
+                  <CardContent className="p-4">
+                    <p className="text-xs uppercase tracking-wide text-emerald-100/80">Right</p>
+                    <p className="text-2xl font-semibold text-emerald-300">{reviewData?.summary.right || 0}</p>
+                  </CardContent>
+                </Card>
+                <Card className="min-w-[180px] flex-1 basis-[220px] border-rose-300/25 bg-rose-500/10">
+                  <CardContent className="p-4">
+                    <p className="text-xs uppercase tracking-wide text-rose-100/80">Wrong</p>
+                    <p className="text-2xl font-semibold text-rose-300">{reviewData?.summary.wrong || 0}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="max-h-[58vh] overflow-y-auto rounded-lg border border-cyan-200/20 bg-slate-900/55">
+                <Table className="w-full table-fixed">
+                  <TableHeader className="sticky top-0 z-10 bg-slate-900/95 backdrop-blur">
+                    <TableRow className="border-cyan-200/15">
+                      <TableHead className="w-[34%] text-cyan-100">Question</TableHead>
+                      <TableHead className="w-[10%] text-cyan-100">Section</TableHead>
+                      <TableHead className="w-[22%] text-cyan-100">Your Answer</TableHead>
+                      <TableHead className="w-[22%] text-cyan-100">Correct Answer</TableHead>
+                      <TableHead className="w-[7%] text-cyan-100">Status</TableHead>
+                      <TableHead className="w-[5%] text-cyan-100">Score</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(reviewData?.review || []).length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="py-8 text-center text-cyan-100/65">
+                          No attended questions for this participant yet.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      (reviewData?.review || []).map((item) => (
+                        <TableRow key={item.question_id} className="border-cyan-200/10">
+                          <TableCell>
+                            <div className="space-y-1">
+                              <p className="font-medium leading-snug">{item.title || `Question ${item.question_id}`}</p>
+                              <p className="line-clamp-2 text-xs text-cyan-100/65">{item.scenario}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="border-cyan-300/35 bg-cyan-300/10 text-cyan-100">
+                              {item.section}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="align-top">
+                            <p className="whitespace-pre-wrap break-all text-xs leading-relaxed text-cyan-50/95">{formatAnswer(item.answer)}</p>
+                          </TableCell>
+                          <TableCell className="align-top">
+                            <p className="whitespace-pre-wrap break-all text-xs leading-relaxed text-cyan-50/95">{formatAnswer(item.correct_answer)}</p>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={item.is_correct ? "border-emerald-300/35 bg-emerald-400/20 text-emerald-100" : "border-rose-300/35 bg-rose-400/20 text-rose-100"}
+                            >
+                              {item.is_correct ? "Right" : "Wrong"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">{item.score_obtained}/{item.score}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Stats Cards */}
       <div className="grid md:grid-cols-4 gap-4">
         <Card>
@@ -419,24 +580,37 @@ export function Round1Management() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={participant.assigned_round || "unassigned"}
-                        onValueChange={(value) =>
-                          handleAssignRound(
-                            participant.id,
-                            value === "unassigned" ? "null" : value
-                          )
-                        }
-                      >
-                        <SelectTrigger className="w-32 h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="border-slate-700 bg-slate-950 text-slate-50">
-                          <SelectItem value="unassigned">Unassigned</SelectItem>
-                          <SelectItem value="round1">Round 1</SelectItem>
-                          <SelectItem value="round2">Round 2</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={participant.assigned_round || "unassigned"}
+                          onValueChange={(value) =>
+                            handleAssignRound(
+                              participant.id,
+                              value === "unassigned" ? "null" : value
+                            )
+                          }
+                        >
+                          <SelectTrigger className="w-32 h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="border-slate-700 bg-slate-950 text-slate-50">
+                            <SelectItem value="unassigned">Unassigned</SelectItem>
+                            <SelectItem value="round1">Round 1</SelectItem>
+                            <SelectItem value="round2">Round 2</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {participant.assigned_round === "round1" ? (
+                          <button
+                            type="button"
+                            onClick={() => loadRound1Review(participant.id)}
+                            className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs hover:bg-muted"
+                            title="Review attended questions"
+                          >
+                            <ListChecks className="h-3.5 w-3.5" />
+                            Review
+                          </button>
+                        ) : null}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

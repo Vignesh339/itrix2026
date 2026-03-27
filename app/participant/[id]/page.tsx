@@ -426,7 +426,7 @@ export default function ParticipantDashboard({
               </div>
               <div>
                 <h1 className="font-semibold text-cyan-50">{participant.name}</h1>
-                <p className="text-xs text-cyan-100/70">ID: {participant.id}</p>
+                <p className="text-xs text-cyan-100/70">ID: {participant.id} • Round 2 Practical Exam</p>
               </div>
             </div>
 
@@ -461,7 +461,7 @@ export default function ParticipantDashboard({
 
       {/* Timer */}
       <div className="container mx-auto px-4 py-4">
-        <Card className="border-cyan-200/20 bg-slate-950/60 backdrop-blur-lg">
+        <Card className="border-cyan-200/20 bg-slate-950/60 shadow-[0_18px_45px_-30px_rgba(0,220,255,0.35)] backdrop-blur-lg">
           <CardContent className="p-4">
             <Timer
               startedAt={participant.timer_started_at}
@@ -490,7 +490,7 @@ export default function ParticipantDashboard({
       {/* Main Content */}
       <main className={`container mx-auto px-4 pb-8 ${isLocked ? "opacity-50 pointer-events-none" : ""}`}>
         <Tabs defaultValue="scenario" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-3 border border-cyan-200/20 bg-slate-950/60">
+          <TabsList className="grid w-full max-w-md grid-cols-3 border border-cyan-200/20 bg-slate-950/70 p-1">
             <TabsTrigger value="scenario">Scenario</TabsTrigger>
             <TabsTrigger value="components">Components</TabsTrigger>
             <TabsTrigger value="unlocked">Unlocked</TabsTrigger>

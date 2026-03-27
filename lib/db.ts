@@ -144,6 +144,21 @@ export interface Round1Response {
   answered_at: string;
 }
 
+export interface Round1ResponseReviewItem {
+  question_id: number;
+  title: string;
+  scenario: string;
+  section: 'A' | 'B' | 'C' | 'D';
+  type: QuestionType;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  score: number;
+  answer: string | string[];
+  correct_answer?: string | string[];
+  is_correct: boolean;
+  score_obtained: number;
+  answered_at: string;
+}
+
 export interface Round1Result {
   id: number;
   participant_id: string;
@@ -562,6 +577,7 @@ export function assignScenario(participantId: string, scenarioId: number): void 
   if (participant) {
     participant.scenario_id = scenarioId;
     store.participants.set(participantId, participant);
+    persistStore();
   }
 }
 
@@ -574,6 +590,7 @@ export function startTimer(participantId: string, duration: number = 3600): void
     participant.is_active = 1;
     store.participants.set(participantId, participant);
     logActivity(participantId, 'timer_start', `Timer started: ${duration} seconds`);
+    persistStore();
   }
 }
 
@@ -585,6 +602,7 @@ export function lockParticipant(participantId: string): void {
     participant.is_active = 0;
     store.participants.set(participantId, participant);
     logActivity(participantId, 'locked', 'Dashboard locked - time expired');
+    persistStore();
   }
 }
 
@@ -595,6 +613,7 @@ export function unlockParticipant(participantId: string): void {
     participant.is_locked = 0;
     store.participants.set(participantId, participant);
     logActivity(participantId, 'unlocked', 'Dashboard unlocked by admin');
+    persistStore();
   }
 }
 
@@ -631,10 +650,12 @@ export function getAllScenarios(): Scenario[] {
 
 export function addScenario(scenario: Scenario): void {
   getStore().scenarios.set(scenario.id, scenario);
+  persistStore();
 }
 
 export function setScenarioComponents(scenarioId: number, componentIds: number[]): void {
   getStore().scenarioComponents.set(scenarioId, componentIds);
+  persistStore();
 }
 
 // Component functions
@@ -677,6 +698,7 @@ export function getAllComponents(): Component[] {
 
 export function addComponent(component: Component): void {
   getStore().components.set(component.id, component);
+  persistStore();
 }
 
 export function getScenarioComponents(scenarioId: number): Component[] {
@@ -731,6 +753,7 @@ export function unlockSnippet(participantId: string, componentId: number): { suc
   } catch {
     logActivity(participantId, 'snippet_unlock', `Unlocked component ID: ${componentId}`);
   }
+  persistStore();
   
   return { success: true };
 }
@@ -746,6 +769,7 @@ export function logActivity(participantId: string, eventType: string, details?: 
     created_at: new Date().toISOString(),
   };
   store.activityLogs.push(log);
+  persistStore();
 }
 
 export function getActivityLogs(participantId?: string): ActivityLog[] {
@@ -799,6 +823,7 @@ export function logViolation(
   
   store.violations.push(violation);
   logActivity(participantId, 'violation', `${violationType}${options?.app_name ? ` (${options.app_name})` : ''}: ${details || ''}`);
+  persistStore();
 }
 
 export function getViolations(participantId?: string): Violation[] {
@@ -895,6 +920,7 @@ export function createRound1Question(question: Omit<Round1Question, 'id' | 'crea
     created_at: new Date().toISOString(),
   };
   store.round1Questions.set(id, newQuestion);
+  persistStore();
   return newQuestion;
 }
 
@@ -905,6 +931,7 @@ export function clearRound1Questions(): void {
   store.round1Results.clear();
   store.round1Sessions.clear();
   store.round1SectionAccess.clear();
+  persistStore();
 }
 
 export function getRound1Questions(section?: string): Round1Question[] {
@@ -1249,12 +1276,44 @@ export function recordRound1Response(
     store.round1Responses.push(response);
   }
   logActivity(participantId, 'round1_response', `Question ${questionId}: ${isCorrect ? 'Correct' : 'Incorrect'} (${scoreObtained}/${question.score} points)`);
+  persistStore();
   
   return response;
 }
 
 export function getRound1Responses(participantId: string): Round1Response[] {
   return getStore().round1Responses.filter(r => r.participant_id === participantId);
+}
+
+export function getRound1ResponseReview(participantId: string): Round1ResponseReviewItem[] {
+  const store = getStore();
+  const responses = store.round1Responses
+    .filter((r) => r.participant_id === participantId)
+    .sort((a, b) => new Date(a.answered_at).getTime() - new Date(b.answered_at).getTime());
+
+  return responses
+    .map((response) => {
+      const question = store.round1Questions.get(response.question_id);
+      if (!question) {
+        return null;
+      }
+
+      return {
+        question_id: question.id,
+        title: question.title,
+        scenario: question.scenario,
+        section: question.section,
+        type: question.type,
+        difficulty: question.difficulty,
+        score: question.score,
+        answer: response.answer,
+        correct_answer: question.correctAnswer,
+        is_correct: response.is_correct,
+        score_obtained: response.score_obtained,
+        answered_at: response.answered_at,
+      };
+    })
+    .filter((item): item is Round1ResponseReviewItem => item !== null);
 }
 
 // Round 1 Result Management
@@ -1310,6 +1369,7 @@ export function createRound1Result(participantId: string): Round1Result {
   }
   
   logActivity(participantId, 'round1_completed', `Round 1 completed with score: ${totalScore}`);
+  persistStore();
   
   return result;
 }

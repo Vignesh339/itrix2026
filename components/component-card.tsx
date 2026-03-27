@@ -48,6 +48,11 @@ export function ComponentCard({
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const setupSteps = (component.setup_instructions || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
   const handleUnlock = async () => {
     if (isLocked || isUnlocked) return;
 
@@ -125,48 +130,80 @@ export function ComponentCard({
         {isUnlocked && snippet ? (
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full">
+              <Button variant="outline" size="sm" className="w-full border-cyan-300/30 bg-slate-900/60 hover:bg-slate-900/80">
                 <Unlock className="mr-2 h-3 w-3" />
                 View Code Snippet
               </Button>
             </DialogTrigger>
-              <DialogContent className="max-h-[80vh] max-w-2xl border-cyan-200/20 bg-slate-950/95 text-cyan-50">
+              <DialogContent className="max-h-[92vh] w-[96vw] max-w-[96vw] sm:!max-w-[96vw] xl:!max-w-6xl overflow-hidden border-cyan-200/20 bg-slate-950/95 text-cyan-50">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Cpu className="h-4 w-4" />
-                  {component.name} - Starter Guidance Pack
+                  {component.name} - Component Reference
                 </DialogTitle>
                 <DialogDescription>
-                  Use this as a basic reference. Final implementation logic must be written by the participant.
+                  Review the original component code first, then follow the documentation checklist.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-2 rounded border border-cyan-200/20 bg-slate-900/70 p-3 text-xs text-cyan-100/80">
-                {component.complexity_level && <p>Complexity: {component.complexity_level}</p>}
-                {component.required_libraries && component.required_libraries.length > 0 && (
-                  <p>Libraries: {component.required_libraries.join(", ")}</p>
-                )}
-                {component.connection_diagram && <p>Connection: {component.connection_diagram}</p>}
-                {component.setup_instructions && <p>Setup: {component.setup_instructions}</p>}
-                {component.warnings && component.warnings.length > 0 && (
-                  <p>Warnings: {component.warnings.join(" | ")}</p>
-                )}
-              </div>
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="absolute right-2 top-2 z-10"
-                  onClick={copyToClipboard}
-                >
-                  {copied ? (
-                    <Check className="h-3 w-3" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
-                  )}
-                </Button>
-                <pre className="max-h-[50vh] overflow-auto rounded-lg border border-cyan-200/20 bg-slate-900 p-4 text-xs text-cyan-100">
-                  <code>{snippet}</code>
-                </pre>
+              <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+                <div className="relative min-h-0 rounded-lg border border-cyan-200/20 bg-slate-900/90 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-cyan-100">Original Component Code</h4>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-cyan-300/30 bg-slate-800/70"
+                      onClick={copyToClipboard}
+                    >
+                      {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    </Button>
+                  </div>
+                  <pre className="max-h-[60vh] overflow-auto rounded-md border border-cyan-200/20 bg-slate-950 p-3 text-xs leading-relaxed text-cyan-100">
+                    <code>{snippet}</code>
+                  </pre>
+                </div>
+
+                <div className="min-h-0 space-y-3 rounded-lg border border-cyan-200/20 bg-slate-900/60 p-4">
+                  <h4 className="text-sm font-semibold text-cyan-100">Component Documentation</h4>
+                  <div className="max-h-[60vh] space-y-3 overflow-auto pr-1 text-xs leading-relaxed text-cyan-100/90">
+                    {component.complexity_level ? (
+                      <p><span className="font-semibold">Complexity:</span> {component.complexity_level}</p>
+                    ) : null}
+
+                    <p><span className="font-semibold">Description:</span> {component.description}</p>
+                    <p className="break-words"><span className="font-semibold">Pin Configuration:</span> {component.pinout}</p>
+
+                    {component.required_libraries && component.required_libraries.length > 0 ? (
+                      <p><span className="font-semibold">Libraries:</span> {component.required_libraries.join(", ")}</p>
+                    ) : null}
+
+                    {component.connection_diagram ? (
+                      <p className="break-words"><span className="font-semibold">Connection Diagram:</span> {component.connection_diagram}</p>
+                    ) : null}
+
+                    {setupSteps.length > 0 ? (
+                      <div className="space-y-1">
+                        <p className="font-semibold">Setup Steps</p>
+                        <ul className="list-disc space-y-1 pl-4">
+                          {setupSteps.map((step, index) => (
+                            <li key={`${component.id}-setup-${index}`}>{step}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    {component.warnings && component.warnings.length > 0 ? (
+                      <div className="space-y-1">
+                        <p className="font-semibold text-amber-200">Warnings</p>
+                        <ul className="list-disc space-y-1 pl-4 text-amber-100">
+                          {component.warnings.map((warning, index) => (
+                            <li key={`${component.id}-warn-${index}`}>{warning}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
               </div>
             </DialogContent>
           </Dialog>

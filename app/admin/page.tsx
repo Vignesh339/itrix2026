@@ -178,6 +178,32 @@ export default function AdminDashboard() {
   }, [initStatus]);
 
   useEffect(() => {
+    const bootstrapAdmin = async () => {
+      if (!isAuthenticated || initialized || initializing) return;
+
+      if (initStatus?.initialized) {
+        setInitialized(true);
+        return;
+      }
+
+      setInitializing(true);
+      try {
+        const res = await fetch("/api/init", { method: "POST" });
+        if (res.ok) {
+          setInitialized(true);
+          checkInit();
+        }
+      } catch (error) {
+        console.error("Failed to initialize admin data:", error);
+      } finally {
+        setInitializing(false);
+      }
+    };
+
+    bootstrapAdmin();
+  }, [isAuthenticated, initialized, initializing, initStatus, checkInit]);
+
+  useEffect(() => {
     if (timerData?.minutes) {
       setGlobalTimerDuration(timerData.minutes.toString());
     }
@@ -477,31 +503,16 @@ export default function AdminDashboard() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
               <Database className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle className="text-2xl">IoT Event Platform</CardTitle>
+            <CardTitle className="text-2xl">Preparing Admin Dashboard</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-center text-muted-foreground">
-              Initialize the database to get started. This will create all necessary
-              tables and seed the components and scenarios.
+              Setting up participant records, scenarios, and dashboard views.
             </p>
-            <Button
-              onClick={initializeDatabase}
-              disabled={initializing}
-              className="w-full"
-              size="lg"
-            >
-              {initializing ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Initializing...
-                </>
-              ) : (
-                <>
-                  <Database className="mr-2 h-4 w-4" />
-                  Initialize Database
-                </>
-              )}
-            </Button>
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Loading...
+            </div>
           </CardContent>
         </Card>
       </div>

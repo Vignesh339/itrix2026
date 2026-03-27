@@ -8,50 +8,6 @@ import {
 } from '@/lib/db';
 import { seedDatabase } from '@/lib/seed-data';
 
-function buildStarterHintPack(component: {
-  name: string;
-  description: string;
-  pinout: string;
-  setup_instructions?: string;
-  warnings?: string[];
-  required_libraries?: string[];
-}): string {
-  const setupLines = component.setup_instructions
-    ? component.setup_instructions.split('\n').map((line) => line.trim()).filter(Boolean)
-    : ['1. Verify power (VCC) and GND first.', '2. Confirm signal pins before coding.', '3. Test with a minimal serial output.'];
-
-  const warningLines = component.warnings && component.warnings.length > 0
-    ? component.warnings
-    : ['Keep wiring stable and avoid hot-plugging while powered.'];
-
-  const libs = component.required_libraries && component.required_libraries.length > 0
-    ? component.required_libraries.join(', ')
-    : 'None required';
-
-  return [
-    `// Starter Guidance Pack: ${component.name}`,
-    '// This is intentionally basic. Complete the logic yourself.',
-    '',
-    '/*',
-    `Description: ${component.description}`,
-    `Pinout: ${component.pinout}`,
-    `Libraries: ${libs}`,
-    'Setup checklist:',
-    ...setupLines.map((line) => `- ${line}`),
-    'Warnings:',
-    ...warningLines.map((line) => `- ${line}`),
-    '*/',
-    '',
-    'void setup() {',
-    '  // TODO: initialize serial and pin modes based on the pinout above',
-    '}',
-    '',
-    'void loop() {',
-    '  // TODO: read inputs, apply logic, and drive outputs for this component',
-    '}',
-  ].join('\n');
-}
-
 function ensureInitialized() {
   if (!isInitialized()) {
     initializeDatabase();
@@ -91,7 +47,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({ 
       success: true, 
-      snippet: component ? buildStarterHintPack(component) : null,
+      snippet: component?.code_snippet || null,
     });
   } catch (error) {
     console.error('Error unlocking snippet:', error);

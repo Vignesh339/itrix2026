@@ -1,4 +1,5 @@
 import { addComponent, addScenario, setScenarioComponents, getAllComponents, initializeDatabase } from './db';
+import { getComponentDocumentation } from './component-docs';
 
 export const components = [
   { id: 1, name: "Micro SD Card (32GB)", description: "32GB Micro SD Card for data storage", pinout: "Standard SD interface - VCC, GND, MISO, MOSI, SCK, CS", category: "Storage", quantity: 10, code_snippet: `// Micro SD Card with Arduino
@@ -855,7 +856,11 @@ export function seedDatabase() {
   // Always upsert canonical components and scenarios.
   // This keeps persistent stores recoverable if tests or manual edits polluted state.
   for (const component of components) {
-    addComponent(component);
+    const docs = getComponentDocumentation(component.id) || {};
+    addComponent({
+      ...component,
+      ...docs,
+    });
   }
 
   for (const scenario of scenarios) {

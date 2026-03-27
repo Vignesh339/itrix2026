@@ -206,6 +206,175 @@ export const componentDocumentation: Record<
     required_libraries: [],
   },
 
+  8: {
+    complexity_level: 'Beginner',
+    estimated_setup_time: 5,
+    setup_instructions: `1. Connect one side of pushbutton to Arduino digital pin (e.g., D2)
+2. Connect the opposite side to GND
+3. Use INPUT_PULLUP in code to avoid floating input
+4. Read LOW as pressed and HIGH as released
+5. Debounce button in software using millis()`,
+    default_pins: {
+      'Signal': 2,
+      'GND': 0,
+    },
+    connection_diagram: 'Pushbutton between digital input and GND with INPUT_PULLUP',
+    warnings: [
+      'Without debouncing, multiple false triggers may occur',
+      'Do not leave digital input floating',
+    ],
+    required_libraries: [],
+  },
+
+  10: {
+    complexity_level: 'Beginner',
+    estimated_setup_time: 5,
+    setup_instructions: `1. Connect LED anode through 220 ohm resistor to Arduino digital pin
+2. Connect LED cathode to GND
+3. Set pinMode(pin, OUTPUT)
+4. Use digitalWrite or PWM for blink/fade effects`,
+    default_pins: {
+      'Anode': 9,
+      'Cathode': 0,
+    },
+    connection_diagram: 'Arduino output -> 220 ohm resistor -> LED anode, LED cathode -> GND',
+    warnings: [
+      'Always use current-limiting resistor',
+      'Reversed polarity prevents LED from lighting',
+    ],
+    required_libraries: [],
+  },
+
+  11: {
+    complexity_level: 'Beginner',
+    estimated_setup_time: 5,
+    setup_instructions: `1. Connect LED anode via 220 ohm resistor to Arduino digital pin
+2. Connect cathode to GND
+3. Configure the pin as OUTPUT in setup()
+4. Use HIGH/LOW or PWM as needed`,
+    default_pins: {
+      'Anode': 10,
+      'Cathode': 0,
+    },
+    connection_diagram: 'Arduino output -> resistor -> green LED -> GND',
+    warnings: [
+      'Use resistor to avoid overcurrent',
+    ],
+    required_libraries: [],
+  },
+
+  12: {
+    complexity_level: 'Beginner',
+    estimated_setup_time: 5,
+    setup_instructions: `1. Connect LED anode via 220 ohm resistor to Arduino digital pin
+2. Connect cathode to GND
+3. Configure pin as OUTPUT in setup()
+4. Drive HIGH/LOW for status indication`,
+    default_pins: {
+      'Anode': 11,
+      'Cathode': 0,
+    },
+    connection_diagram: 'Arduino output -> resistor -> yellow LED -> GND',
+    warnings: [
+      'Use resistor to avoid LED damage',
+    ],
+    required_libraries: [],
+  },
+
+  18: {
+    complexity_level: 'Beginner',
+    estimated_setup_time: 3,
+    setup_instructions: `1. Place resistor in series with LED or signal path
+2. Confirm value using color bands (Red-Red-Brown)
+3. Use resistor in current limiting and divider circuits`,
+    connection_diagram: 'Series protection or voltage divider usage',
+    warnings: [
+      'Incorrect resistance value can overdrive components',
+    ],
+    required_libraries: [],
+  },
+
+  26: {
+    complexity_level: 'Beginner',
+    estimated_setup_time: 10,
+    setup_instructions: `1. Connect HC-SR04 VCC to 5V and GND to ground
+2. Connect Trig to digital output pin and Echo to digital input pin
+3. Send 10us pulse on Trig to start measurement
+4. Read echo pulse width and convert to distance`,
+    default_pins: {
+      'Trig': 9,
+      'Echo': 10,
+      'VCC': 5,
+      'GND': 0,
+    },
+    connection_diagram: 'HC-SR04 Trig/Echo to digital pins with 5V power',
+    warnings: [
+      'Keep sensor clear from angled surfaces for stable readings',
+      'Echo pin timing can block if no echo is received',
+    ],
+    required_libraries: [],
+  },
+
+  27: {
+    complexity_level: 'Beginner',
+    estimated_setup_time: 8,
+    setup_instructions: `1. Connect VCC to 5V, GND to ground, and OUT to digital input pin
+2. Wait warm-up period (~30-60 seconds) after powering sensor
+3. Read OUT pin HIGH for motion, LOW for idle
+4. Tune sensitivity/time-delay potentiometers if available`,
+    default_pins: {
+      'OUT': 2,
+      'VCC': 5,
+      'GND': 0,
+    },
+    connection_diagram: 'PIR OUT to digital input with 5V/GND supply',
+    warnings: [
+      'Initial warm-up can produce unstable output',
+      'Avoid placing near heat sources',
+    ],
+    required_libraries: [],
+  },
+
+  30: {
+    complexity_level: 'Intermediate',
+    estimated_setup_time: 12,
+    setup_instructions: `1. Connect relay module VCC and GND to Arduino power rails
+2. Connect IN pin to chosen digital output pin
+3. Connect load through COM and NO/NC terminals as required
+4. Use digitalWrite to switch relay state`,
+    default_pins: {
+      'IN': 7,
+      'VCC': 5,
+      'GND': 0,
+    },
+    connection_diagram: 'Arduino digital output controls relay IN; load wired via COM/NO',
+    warnings: [
+      'Handle high-voltage loads with proper isolation',
+      'Many relay modules are active LOW',
+    ],
+    required_libraries: [],
+  },
+
+  33: {
+    complexity_level: 'Beginner',
+    estimated_setup_time: 8,
+    setup_instructions: `1. Connect VCC to 5V, GND to GND, and OUT to a digital input pin
+2. Place sensor so emitter/receiver faces door path or obstacle path
+3. Read digital output state for beam obstruction detection
+4. Calibrate sensitivity potentiometer if available`,
+    default_pins: {
+      'OUT': 2,
+      'VCC': 5,
+      'GND': 0,
+    },
+    connection_diagram: 'IR sensor OUT to digital input, powered by 5V and GND',
+    warnings: [
+      'Strong ambient sunlight can affect reliability',
+      'Align sensor direction for repeatable detection',
+    ],
+    required_libraries: [],
+  },
+
   // Add more components as needed...
   // 8-49: Additional components follow similar pattern
 };

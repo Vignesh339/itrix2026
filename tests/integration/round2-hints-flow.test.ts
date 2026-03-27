@@ -56,7 +56,7 @@ describe('round2 component access scoring integration', () => {
       snippet: string;
     };
     expect(accessBody.success).toBe(true);
-    expect(accessBody.snippet).toContain('Starter Guidance Pack');
+    expect(accessBody.snippet).toContain('void setup()');
 
     const completeRes = await patchParticipant(
       makeJsonRequest({ action: 'complete_round2' }) as never,

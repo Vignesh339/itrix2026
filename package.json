@@ -13,7 +13,8 @@
     "test:ui": "vitest run tests/ui",
     "test:integration": "vitest run tests/integration",
     "test:regression": "vitest run tests/regression",
-    "round1:seed": "tsx scripts/seed-round1-content.ts"
+    "round1:seed": "tsx scripts/seed-round1-content.ts",
+    "load:test": "tsx scripts/load-test-1000.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

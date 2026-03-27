@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   recordRound1Response,
   getRound1Responses,
+  getRound1ResponseReview,
   createRound1Result,
   getRound1Result,
   isRound1SessionExpired,
@@ -64,6 +65,20 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Result not found' }, { status: 404 });
       }
       return NextResponse.json({ result });
+    }
+
+    if (action === 'review') {
+      const review = getRound1ResponseReview(participantId);
+      const right = review.filter((item) => item.is_correct).length;
+      const wrong = review.length - right;
+      return NextResponse.json({
+        review,
+        summary: {
+          attended: review.length,
+          right,
+          wrong,
+        },
+      });
     }
 
     const responses = getRound1Responses(participantId);
