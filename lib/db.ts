@@ -7,6 +7,8 @@ export interface Participant {
   id: string;
   name: string;
   team_name?: string;
+  college?: string;
+  department?: string;
   phone?: string;
   email?: string;
   year?: string;
@@ -223,6 +225,7 @@ interface DataStore {
   round1Results: Map<string, Round1Result>;
   round1Sessions: Map<string, Round1Session>;
   round1SectionAccess: Map<string, number>;
+  leaderboard_public_enabled: boolean;
 }
 
 // Global store that persists during server runtime
@@ -255,6 +258,7 @@ function getStore(): DataStore {
       round1Results: new Map(),
       round1Sessions: new Map(),
       round1SectionAccess: new Map(),
+      leaderboard_public_enabled: false,
     };
     
     // Auto-load persisted data on first access
@@ -291,6 +295,9 @@ function getStore(): DataStore {
   }
   if (!global.__iotStore.round1SectionAccess) {
     global.__iotStore.round1SectionAccess = new Map();
+  }
+  if (global.__iotStore.leaderboard_public_enabled === undefined) {
+    global.__iotStore.leaderboard_public_enabled = false;
   }
 
   return global.__iotStore;
@@ -347,6 +354,9 @@ function loadPersistedData(): void {
       if (parsed.whitelisted_apps && Array.isArray(parsed.whitelisted_apps)) {
         store.whitelisted_apps = new Set(parsed.whitelisted_apps);
       }
+      if (parsed.leaderboard_public_enabled !== undefined) {
+        store.leaderboard_public_enabled = Boolean(parsed.leaderboard_public_enabled);
+      }
     }
   } catch (error) {
     // Silently fail on first run
@@ -386,6 +396,7 @@ function persistStore(): void {
       round1Results: Array.from(store.round1Results.entries()),
       round1Sessions: Array.from(store.round1Sessions.entries()),
       round1SectionAccess: Array.from(store.round1SectionAccess.entries()),
+      leaderboard_public_enabled: store.leaderboard_public_enabled,
     };
     
     fs.writeFileSync(persistenceFile, JSON.stringify(data, null, 2), 'utf-8');
@@ -545,12 +556,24 @@ export function getAllParticipants(): Participant[] {
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
-export function createParticipant(name: string, id: string, teamName?: string, assignedRound?: 'round1' | 'round2', phone?: string, email?: string, year?: string): Participant {
+export function createParticipant(
+  name: string,
+  id: string,
+  teamName?: string,
+  assignedRound?: 'round1' | 'round2',
+  phone?: string,
+  email?: string,
+  year?: string,
+  college?: string,
+  department?: string
+): Participant {
   const store = getStore();
   const participant: Participant = {
     id,
     name,
     team_name: teamName,
+    college,
+    department,
     phone,
     email,
     year,
@@ -1386,6 +1409,60 @@ export function updateParticipantAssignedRound(participantId: string, round: 'ro
   participant.assigned_round = round;
   store.participants.set(participantId, participant);
   logActivity(participantId, 'round_assigned', `Assigned to ${round}`);
+  persistStore();
   
   return true;
+}
+
+export function isLeaderboardPublicEnabled(): boolean {
+  return getStore().leaderboard_public_enabled;
+}
+
+export function setLeaderboardPublicEnabled(enabled: boolean): void {
+  const store = getStore();
+  store.leaderboard_public_enabled = enabled;
+  persistStore();
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  team_name: string;
+  avg_score: number;
+  members: number;
+  completed_members: number;
+}
+
+export function getPublicLeaderboard(): LeaderboardEntry[] {
+  const participants = getAllParticipants().filter((participant) => participant.team_name);
+  const teamMap = new Map<string, Participant[]>();
+
+  participants.forEach((participant) => {
+    const key = (participant.team_name || '').trim();
+    if (!key) return;
+    if (!teamMap.has(key)) {
+      teamMap.set(key, []);
+    }
+    teamMap.get(key)!.push(participant);
+  });
+
+  const rows = Array.from(teamMap.entries()).map(([teamName, members]) => {
+    const completed = members.filter((member) => member.round1_completed);
+    const avg = completed.length
+      ? completed.reduce((sum, member) => sum + (member.round1_score || 0), 0) / completed.length
+      : 0;
+
+    return {
+      team_name: teamName,
+      avg_score: avg,
+      members: members.length,
+      completed_members: completed.length,
+    };
+  });
+
+  return rows
+    .sort((a, b) => b.avg_score - a.avg_score)
+    .map((entry, index) => ({
+      rank: index + 1,
+      ...entry,
+    }));
 }

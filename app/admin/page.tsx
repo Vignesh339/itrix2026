@@ -56,6 +56,8 @@ import {
   Eye,
   Home,
   KeyRound,
+  Download,
+  Trophy,
 } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -64,6 +66,8 @@ interface Participant {
   id: string;
   name: string;
   team_name?: string;
+  college?: string;
+  department?: string;
   scenario_id: number | null;
   timer_duration: number;
   timer_started_at: string | null;
@@ -111,7 +115,17 @@ export default function AdminDashboard() {
   const [authError, setAuthError] = useState("");
   const [initialized, setInitialized] = useState(false);
   const [initializing, setInitializing] = useState(false);
-  const [newParticipant, setNewParticipant] = useState({ name: "", teamName: "", id: "", assignedRound: "round2" as 'round1' | 'round2', phone: "", email: "", year: "" });
+  const [newParticipant, setNewParticipant] = useState({
+    name: "",
+    teamName: "",
+    id: "",
+    assignedRound: "round2" as 'round1' | 'round2',
+    phone: "",
+    email: "",
+    year: "",
+    college: "",
+    department: "",
+  });
   const [createdParticipant, setCreatedParticipant] = useState<{ id: string; scenario: string } | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<string>("");
   const [timerDuration, setTimerDuration] = useState("120");
@@ -119,6 +133,8 @@ export default function AdminDashboard() {
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [globalTimerDuration, setGlobalTimerDuration] = useState("120");
   const [newViolationAlert, setNewViolationAlert] = useState<{ participant: string; type: string; time: string } | null>(null);
+  const [leaderboardPublicEnabled, setLeaderboardPublicEnabled] = useState(false);
+  const [updatingLeaderboard, setUpdatingLeaderboard] = useState(false);
   const lastViolationIdRef = useRef<number>(0);
   
   // Check for existing admin session and redirect if already authenticated
@@ -171,6 +187,12 @@ export default function AdminDashboard() {
     { refreshInterval: 5000 }
   );
 
+  const { data: leaderboardData, mutate: refreshLeaderboard } = useSWR(
+    initialized ? "/api/admin/leaderboard" : null,
+    fetcher,
+    { refreshInterval: 0 }
+  );
+
   useEffect(() => {
     if (initStatus?.initialized) {
       setInitialized(true);
@@ -208,6 +230,12 @@ export default function AdminDashboard() {
       setGlobalTimerDuration(timerData.minutes.toString());
     }
   }, [timerData]);
+
+  useEffect(() => {
+    if (typeof leaderboardData?.enabled === "boolean") {
+      setLeaderboardPublicEnabled(leaderboardData.enabled);
+    }
+  }, [leaderboardData]);
 
   // Real-time violation alert: fire when new violations arrive via polling
   useEffect(() => {
@@ -290,6 +318,8 @@ export default function AdminDashboard() {
           phone: newParticipant.phone,
           email: newParticipant.email,
           year: newParticipant.year || undefined,
+          college: newParticipant.college,
+          department: newParticipant.department,
         }),
       });
 
@@ -299,7 +329,7 @@ export default function AdminDashboard() {
           id: data.generatedId,
           scenario: newParticipant.assignedRound === 'round1' ? 'Round 1 - MCQ Quiz' : (data.participant.scenario_title || "No scenario available"),
         });
-        setNewParticipant({ name: "", teamName: "", id: "", assignedRound: "round2", phone: "", email: "", year: "" });
+        setNewParticipant({ name: "", teamName: "", id: "", assignedRound: "round2", phone: "", email: "", year: "", college: "", department: "" });
         refreshParticipants();
       }
     } catch (error) {
@@ -421,6 +451,47 @@ export default function AdminDashboard() {
       refreshParticipants();
     } catch (error) {
       console.error("Failed to delete participant:", error);
+    }
+  };
+
+  const toggleLeaderboardVisibility = async () => {
+    setUpdatingLeaderboard(true);
+    try {
+      const res = await fetch("/api/admin/leaderboard", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !leaderboardPublicEnabled }),
+      });
+
+      if (res.ok) {
+        setLeaderboardPublicEnabled((prev) => !prev);
+        refreshLeaderboard();
+      }
+    } catch (error) {
+      console.error("Failed to update leaderboard setting:", error);
+    } finally {
+      setUpdatingLeaderboard(false);
+    }
+  };
+
+  const exportParticipantsToExcel = async () => {
+    try {
+      const res = await fetch("/api/admin/export");
+      if (!res.ok) {
+        throw new Error("Export failed");
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `participants_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to export participants:", error);
     }
   };
 
@@ -631,6 +702,21 @@ export default function AdminDashboard() {
 
       {/* Stats */}
       <div className="container mx-auto px-4 py-6">
+        <Card className="mb-4">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Public Leaderboard</p>
+              <p className="text-xs text-muted-foreground">
+                Allow all visitors to view team standings on the home page.
+              </p>
+            </div>
+            <Button variant={leaderboardPublicEnabled ? "default" : "outline"} onClick={toggleLeaderboardVisibility} disabled={updatingLeaderboard} className="gap-2">
+              <Trophy className="h-4 w-4" />
+              {leaderboardPublicEnabled ? "Leaderboard: Enabled" : "Leaderboard: Disabled"}
+            </Button>
+          </CardContent>
+        </Card>
+
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -681,9 +767,9 @@ export default function AdminDashboard() {
       <main className="container mx-auto px-4 pb-8">
         <Tabs defaultValue="participants" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="participants">Participants</TabsTrigger>
-          <TabsTrigger value="round1-manage">Round 1 - Manage</TabsTrigger>
-          <TabsTrigger value="round1-questions">Round 1 - Questions</TabsTrigger>
+          <TabsTrigger value="participants">Team Registry</TabsTrigger>
+          <TabsTrigger value="round1-center">Round 1 Center</TabsTrigger>
+          <TabsTrigger value="round2-center">Round 2 Center</TabsTrigger>
           <TabsTrigger value="activity">Activity Log</TabsTrigger>
           <TabsTrigger value="violations" className="gap-1.5">
             Violations
@@ -698,7 +784,12 @@ export default function AdminDashboard() {
 
           <TabsContent value="participants" className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold">Manage Participants</h2>
+              <h2 className="text-lg font-semibold">Team & Participant Registry</h2>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={exportParticipantsToExcel} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Export Excel (CSV)
+                </Button>
               <Dialog open={dialogOpen} onOpenChange={(open) => {
                 setDialogOpen(open);
                 if (!open) setCreatedParticipant(null);
@@ -787,6 +878,34 @@ export default function AdminDashboard() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
+                            <label className="text-sm font-medium">College *</label>
+                            <Input
+                              placeholder="Enter college name"
+                              value={newParticipant.college}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  college: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Department *</label>
+                            <Input
+                              placeholder="Enter department"
+                              value={newParticipant.department}
+                              onChange={(e) =>
+                                setNewParticipant((prev) => ({
+                                  ...prev,
+                                  department: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
                             <label className="text-sm font-medium">Phone *</label>
                             <Input
                               placeholder="e.g. 0123456789"
@@ -870,7 +989,7 @@ export default function AdminDashboard() {
                         <Button variant="outline" onClick={() => setDialogOpen(false)}>
                           Cancel
                         </Button>
-                        <Button onClick={createParticipant} disabled={!newParticipant.name || !newParticipant.teamName || !newParticipant.phone || !newParticipant.email}>
+                        <Button onClick={createParticipant} disabled={!newParticipant.name || !newParticipant.teamName || !newParticipant.phone || !newParticipant.email || !newParticipant.college || !newParticipant.department}>
                           Create Participant
                         </Button>
                       </DialogFooter>
@@ -878,6 +997,7 @@ export default function AdminDashboard() {
                   )}
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
 
             <Card>
@@ -888,6 +1008,8 @@ export default function AdminDashboard() {
                       <TableHead>ID</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Team</TableHead>
+                      <TableHead>College</TableHead>
+                      <TableHead>Department</TableHead>
                       <TableHead>Phone</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Year</TableHead>
@@ -904,7 +1026,7 @@ export default function AdminDashboard() {
                   <TableBody>
                     {participants.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={14} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={16} className="text-center py-8 text-muted-foreground">
                           No participants yet. Add one to get started.
                         </TableCell>
                       </TableRow>
@@ -921,6 +1043,12 @@ export default function AdminDashboard() {
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
                               {participant.team_name || "-"}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {participant.college || "-"}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {participant.department || "-"}
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
                               {participant.phone || "-"}
@@ -1052,6 +1180,41 @@ export default function AdminDashboard() {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="round1-center" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Round 1 Operations</CardTitle>
+                <CardDescription>Review scores, promote performers, and control question progression.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Round1Management />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Round 1 Question Bank</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Round1QuestionManager />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="round2-center" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Round 2 Operations</CardTitle>
+                <CardDescription>Monitor scenario progress, timer status, component accesses, and violations.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Use the Team Registry tab for participant-level actions and this panel for component/scenario oversight.
+                </p>
+              </CardContent>
+            </Card>
+            <ComponentsView />
           </TabsContent>
 
           <TabsContent value="activity" className="space-y-4">
@@ -1199,14 +1362,6 @@ export default function AdminDashboard() {
 
           <TabsContent value="components" className="space-y-4">
             <ComponentsView />
-          </TabsContent>
-
-          <TabsContent value="round1-manage" className="space-y-4">
-            <Round1Management />
-          </TabsContent>
-
-          <TabsContent value="round1-questions" className="space-y-4">
-            <Round1QuestionManager />
           </TabsContent>
         </Tabs>
       </main>

@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -125,6 +126,8 @@ export function Round1Management() {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewParticipantId, setReviewParticipantId] = useState<string | null>(null);
   const [reviewData, setReviewData] = useState<Round1ReviewPayload | null>(null);
+  const [promoteThreshold, setPromoteThreshold] = useState("60");
+  const [promoting, setPromoting] = useState(false);
 
   const { data: participantsData, mutate: refreshParticipants } = useSWR(
     "/api/participants",
@@ -181,6 +184,35 @@ export function Round1Management() {
       setReviewData({ review: [], summary: { attended: 0, right: 0, wrong: 0 } });
     } finally {
       setReviewLoading(false);
+    }
+  };
+
+  const promoteTopPerformers = async () => {
+    const threshold = Number(promoteThreshold);
+    if (Number.isNaN(threshold)) return;
+
+    const eligible = (participantsData?.participants || []).filter((participant: ParticipantData) => {
+      return participant.round1_completed && (participant.round1_score || 0) >= threshold && participant.assigned_round !== "round2";
+    });
+
+    if (eligible.length === 0) return;
+
+    setPromoting(true);
+    try {
+      await Promise.all(
+        eligible.map((participant: ParticipantData) =>
+          fetch(`/api/participants/${participant.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "assign_round", assigned_round: "round2" }),
+          })
+        )
+      );
+      refreshParticipants();
+    } catch (error) {
+      console.error("Failed to promote participants:", error);
+    } finally {
+      setPromoting(false);
     }
   };
 
@@ -380,6 +412,27 @@ export function Round1Management() {
       </div>
 
       {/* Team Leaderboard */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Round Advancement</CardTitle>
+          <CardDescription>
+            Promote participants who completed Round 1 with score greater than or equal to threshold.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-3">
+          <div className="w-24">
+            <Input
+              value={promoteThreshold}
+              onChange={(e) => setPromoteThreshold(e.target.value)}
+              placeholder="Score"
+            />
+          </div>
+          <Button onClick={promoteTopPerformers} disabled={promoting}>
+            {promoting ? "Promoting..." : "Promote Top Performers to Round 2"}
+          </Button>
+        </CardContent>
+      </Card>
+
       {teamLeaderboard.length > 0 && (
         <Card>
           <CardHeader>

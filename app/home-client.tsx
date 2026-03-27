@@ -20,6 +20,7 @@ import {
   Wifi,
   WifiOff,
   Play,
+  Trophy,
 } from "lucide-react"
 
 const IotAmbientCanvas = dynamic(
@@ -35,6 +36,7 @@ export function HomePageClient({ serverInitialized }: { serverInitialized: boole
   const [isOnline, setIsOnline] = useState(true)
   const [isInitializing, setIsInitializing] = useState(false)
   const [initialized, setInitialized] = useState(serverInitialized)
+  const [leaderboardEnabled, setLeaderboardEnabled] = useState(false)
 
   const shellRef = useRef<HTMLDivElement>(null)
 
@@ -104,6 +106,23 @@ export function HomePageClient({ serverInitialized }: { serverInitialized: boole
     }, shellRef)
 
     return () => ctx.revert()
+  }, [initialized])
+
+  useEffect(() => {
+    const loadLeaderboardStatus = async () => {
+      try {
+        const response = await fetch("/api/leaderboard")
+        if (!response.ok) return
+        const data = await response.json()
+        setLeaderboardEnabled(Boolean(data?.enabled))
+      } catch {
+        setLeaderboardEnabled(false)
+      }
+    }
+
+    if (initialized) {
+      loadLeaderboardStatus()
+    }
   }, [initialized])
 
   const initializeDatabase = async () => {
@@ -351,6 +370,26 @@ export function HomePageClient({ serverInitialized }: { serverInitialized: boole
               </form>
             </CardContent>
           </Card>
+
+          {leaderboardEnabled ? (
+            <Card className="js-panel border-white/10 bg-slate-950/60 backdrop-blur-xl transition-colors hover:border-cyan-300/50 md:col-span-2">
+              <CardHeader>
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-amber-300/30 bg-amber-300/15">
+                  <Trophy className="h-6 w-6 text-amber-200" />
+                </div>
+                <CardTitle className="text-2xl">Public Leaderboard</CardTitle>
+                <CardDescription className="text-cyan-100/70">
+                  Live team ranking for completed Round 1 scores. Visible to everyone when enabled by admin.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="h-12 w-full gap-2 md:w-auto" size="lg" onClick={() => router.push("/leaderboard")}>
+                  View Leaderboard
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
 
         <p className="mt-10 text-center text-xs uppercase tracking-[0.2em] text-cyan-100/55 md:mt-14">

@@ -43,7 +43,18 @@ export async function POST(request: NextRequest) {
   try {
     ensureInitialized();
     const body = await request.json();
-    const { name, teamName, id: providedId, autoAssignScenario = true, assignedRound, phone, email, year } = body;
+    const {
+      name,
+      teamName,
+      id: providedId,
+      autoAssignScenario = true,
+      assignedRound,
+      phone,
+      email,
+      year,
+      college,
+      department,
+    } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -56,6 +67,20 @@ export async function POST(request: NextRequest) {
     }
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+    if (!college) {
+      return NextResponse.json({ error: 'College is required' }, { status: 400 });
+    }
+    if (!department) {
+      return NextResponse.json({ error: 'Department is required' }, { status: 400 });
+    }
+
+    const normalizedTeam = String(teamName).trim().toLowerCase();
+    const teamMembersCount = getAllParticipants().filter(
+      (participant) => (participant.team_name || '').trim().toLowerCase() === normalizedTeam
+    ).length;
+    if (teamMembersCount >= 3) {
+      return NextResponse.json({ error: 'A team can have at most 3 members.' }, { status: 400 });
     }
 
     // Generate unique ID if not provided
@@ -74,7 +99,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Create participant with assigned round
-    const participant = createParticipant(name, participantId, teamName, assignedRound, phone, email, year);
+    const participant = createParticipant(
+      name,
+      participantId,
+      teamName,
+      assignedRound,
+      phone,
+      email,
+      year,
+      college,
+      department
+    );
 
     // Auto-assign a random scenario if enabled and participant is for Round 2
     let assignedScenario = null;
