@@ -307,18 +307,18 @@ export function HomePageClient({ serverInitialized }: { serverInitialized: boole
             {isOnline ? (
               <span className="flex items-center gap-1.5 text-emerald-300">
                 <Wifi className="h-3.5 w-3.5" />
-                Network Ready
+                Event Window Live
               </span>
             ) : (
               <span className="flex items-center gap-1.5 text-amber-300">
                 <WifiOff className="h-3.5 w-3.5" />
-                Offline Safe Mode
+                Event Window Standby
               </span>
             )}
           </div>
           <div className="hidden items-center gap-2 text-xs uppercase tracking-[0.22em] text-cyan-100/70 sm:flex">
             <Radio className="h-3.5 w-3.5" />
-            Local Server Active
+            Round Ops In Progress
           </div>
         </div>
       </section>
@@ -327,7 +327,7 @@ export function HomePageClient({ serverInitialized }: { serverInitialized: boole
         <div className="js-hero mb-8 md:mb-12">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-100">
             <Bolt className="h-3.5 w-3.5" />
-            Live Prototype Arena
+            Sensor Sprint Live Operations
           </div>
           <div className="sensor-sprint-banner max-w-4xl">
             <span className="sensor-sprint-chip">ITRIX 2026 • Circuit Mode</span>
@@ -479,10 +479,6 @@ export function HomePageClient({ serverInitialized }: { serverInitialized: boole
             </Card>
           ) : null}
         </div>
-
-        <p className="mt-10 text-center text-xs uppercase tracking-[0.2em] text-cyan-100/55 md:mt-14">
-          Autonomous local runtime • zero external dependency during live rounds
-        </p>
       </section>
     </main>
   )
